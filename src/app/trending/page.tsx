@@ -3,6 +3,94 @@
 import { useState, useEffect, useCallback } from "react";
 import SiteNavbar from "@/components/SiteNavbar";
 import SiteFooter from "@/components/SiteFooter";
+import { useLang } from "@/lib/useLang";
+
+const TR = {
+  IT: {
+    badge: "Live Solana Radar",
+    heading1: "Token che stanno",
+    heading2: "pompando ora.",
+    desc: "Scopri i token Solana live da DexScreener, studia narrativa e momentum, poi usa AI per ricreare una variante originale.",
+    trending: "🔥 Trending", gainers: "📈 Gainers", newt: "🆕 New",
+    refresh: "Aggiorna", autoRefresh: "Auto-refresh",
+    empty: "Nessun token trovato. Riprova tra qualche secondo.",
+    recreateLabel: "Ricrea con AI", inspiredBy: "Ispirato a",
+    aiLoading1: "Analizzo trend, metriche e viralità...",
+    aiLoading2: "Creo una variante originale ispirata al token.",
+    whyViral: "Perché può diventare virale", strategy: "Strategia",
+    useToken: "Usa questo token — Apri SolMint",
+  },
+  EN: {
+    badge: "Live Solana Radar",
+    heading1: "Tokens that are",
+    heading2: "pumping now.",
+    desc: "Discover live Solana tokens from DexScreener, study narratives and momentum, then use AI to recreate an original variant.",
+    trending: "🔥 Trending", gainers: "📈 Gainers", newt: "🆕 New",
+    refresh: "Refresh", autoRefresh: "Auto-refresh",
+    empty: "No tokens found. Try again in a few seconds.",
+    recreateLabel: "Recreate with AI", inspiredBy: "Inspired by",
+    aiLoading1: "Analyzing trends, metrics and virality...",
+    aiLoading2: "Creating an original variant inspired by this token.",
+    whyViral: "Why it can go viral", strategy: "Strategy",
+    useToken: "Use this token — Open SolMint",
+  },
+  ES: {
+    badge: "Live Solana Radar",
+    heading1: "Tokens que están",
+    heading2: "pumpeando ahora.",
+    desc: "Descubre tokens Solana en vivo desde DexScreener, estudia narrativas y momentum, luego usa IA para recrear una variante original.",
+    trending: "🔥 Trending", gainers: "📈 Gainers", newt: "🆕 Nuevos",
+    refresh: "Actualizar", autoRefresh: "Auto-refresh",
+    empty: "No se encontraron tokens. Inténtalo de nuevo en unos segundos.",
+    recreateLabel: "Recrear con IA", inspiredBy: "Inspirado en",
+    aiLoading1: "Analizando tendencias, métricas y viralidad...",
+    aiLoading2: "Creando una variante original inspirada en el token.",
+    whyViral: "Por qué puede volverse viral", strategy: "Estrategia",
+    useToken: "Usar este token — Abrir SolMint",
+  },
+  FR: {
+    badge: "Live Solana Radar",
+    heading1: "Tokens qui sont en",
+    heading2: "train de pomper.",
+    desc: "Découvrez les tokens Solana en direct depuis DexScreener, étudiez les narratifs et le momentum, puis utilisez l'IA pour recréer une variante originale.",
+    trending: "🔥 Trending", gainers: "📈 Gainers", newt: "🆕 Nouveaux",
+    refresh: "Actualiser", autoRefresh: "Auto-refresh",
+    empty: "Aucun token trouvé. Réessayez dans quelques secondes.",
+    recreateLabel: "Recréer avec l'IA", inspiredBy: "Inspiré de",
+    aiLoading1: "Analyse des tendances, métriques et viralité...",
+    aiLoading2: "Création d'une variante originale inspirée du token.",
+    whyViral: "Pourquoi ça peut devenir viral", strategy: "Stratégie",
+    useToken: "Utiliser ce token — Ouvrir SolMint",
+  },
+  PT: {
+    badge: "Live Solana Radar",
+    heading1: "Tokens que estão",
+    heading2: "pumpando agora.",
+    desc: "Descubra tokens Solana ao vivo do DexScreener, estude narrativas e momentum, depois use IA para recriar uma variante original.",
+    trending: "🔥 Trending", gainers: "📈 Gainers", newt: "🆕 Novos",
+    refresh: "Atualizar", autoRefresh: "Auto-refresh",
+    empty: "Nenhum token encontrado. Tente novamente em alguns segundos.",
+    recreateLabel: "Recriar com IA", inspiredBy: "Inspirado em",
+    aiLoading1: "Analisando tendências, métricas e viralidade...",
+    aiLoading2: "Criando uma variante original inspirada no token.",
+    whyViral: "Por que pode se tornar viral", strategy: "Estratégia",
+    useToken: "Usar este token — Abrir SolMint",
+  },
+  DE: {
+    badge: "Live Solana Radar",
+    heading1: "Tokens die gerade",
+    heading2: "pumpen.",
+    desc: "Entdecke Live-Solana-Tokens von DexScreener, studiere Narratives und Momentum, dann nutze KI um eine originelle Variante zu erstellen.",
+    trending: "🔥 Trending", gainers: "📈 Gainers", newt: "🆕 Neu",
+    refresh: "Aktualisieren", autoRefresh: "Auto-refresh",
+    empty: "Keine Token gefunden. Versuche es in einigen Sekunden erneut.",
+    recreateLabel: "Mit KI nachbilden", inspiredBy: "Inspiriert von",
+    aiLoading1: "Trends, Metriken und Viralität analysieren...",
+    aiLoading2: "Erstelle eine originelle Variante inspiriert vom Token.",
+    whyViral: "Warum es viral gehen kann", strategy: "Strategie",
+    useToken: "Diesen Token verwenden — SolMint öffnen",
+  },
+} as const;
 
 interface Token {
   address: string;
@@ -259,6 +347,9 @@ function SkeletonCard() {
 }
 
 export default function TrendingPage() {
+  const [lang] = useLang();
+  const t = TR[lang] ?? TR["EN"];
+
   const [tokens, setTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -484,7 +575,7 @@ export default function TrendingPage() {
                 className="h-2 w-2 rounded-full animate-pulse"
                 style={{ background: "#14F195", boxShadow: "0 0 10px #14F195" }}
               />
-              Live Solana Radar
+              {t.badge}
               {lastUpdate && (
                 <span className="normal-case tracking-normal font-semibold" style={{ color: "rgba(255,255,255,0.35)" }}>
                   · {lastUpdate.toLocaleTimeString("it-IT")}
@@ -499,21 +590,15 @@ export default function TrendingPage() {
                 letterSpacing: "-0.055em",
               }}
             >
-              Token che stanno
+              {t.heading1}
               <br />
-              <span
-                style={{
-                  background: "linear-gradient(90deg, #9945FF, #14F195)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                pompando ora.
+              <span style={{ background: "linear-gradient(90deg, #9945FF, #14F195)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                {t.heading2}
               </span>
             </h1>
 
             <p className="mx-auto max-w-2xl text-base sm:text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.43)" }}>
-              Scopri i token Solana live da DexScreener, studia narrativa e momentum, poi usa AI per ricreare una variante originale.
+              {t.desc}
             </p>
           </div>
 
@@ -543,7 +628,7 @@ export default function TrendingPage() {
                     color: filter === f ? "white" : "rgba(255,255,255,0.42)",
                   }}
                 >
-                  {f === "trending" ? "🔥 Trending" : f === "gainers" ? "📈 Gainers" : "🆕 New"}
+                  {f === "trending" ? t.trending : f === "gainers" ? t.gainers : t.newt}
                 </button>
               ))}
             </div>
@@ -576,7 +661,7 @@ export default function TrendingPage() {
                   color: "rgba(255,255,255,0.7)",
                 }}
               >
-                Aggiorna
+                {t.refresh}
               </button>
             </div>
           </div>
@@ -592,7 +677,7 @@ export default function TrendingPage() {
           {!loading && filtered.length === 0 && (
             <div className="py-24 text-center" style={{ color: "rgba(255,255,255,0.3)" }}>
               <div className="mb-4 text-5xl">🔍</div>
-              <p>Nessun token trovato. Riprova tra qualche secondo.</p>
+              <p>{t.empty}</p>
             </div>
           )}
         </div>
@@ -625,10 +710,10 @@ export default function TrendingPage() {
             <div className="mb-6 flex justify-between gap-4">
               <div>
                 <p className="mb-2 text-xs font-black uppercase tracking-widest" style={{ color: "#14F195" }}>
-                  Ricrea con AI
+                  {t.recreateLabel}
                 </p>
                 <h2 className="text-2xl sm:text-3xl font-black text-white">
-                  Ispirato a {selectedToken.name}
+                  {t.inspiredBy} {selectedToken.name}
                 </h2>
               </div>
 
@@ -653,10 +738,8 @@ export default function TrendingPage() {
             {aiLoading && (
               <div className="py-14 text-center">
                 <div className="mb-4 text-5xl">🤖</div>
-                <p className="mb-2 font-black text-white">Analizzo trend, metriche e viralità...</p>
-                <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
-                  Creo una variante originale ispirata al token.
-                </p>
+                <p className="mb-2 font-black text-white">{t.aiLoading1}</p>
+                <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>{t.aiLoading2}</p>
               </div>
             )}
 
@@ -712,7 +795,7 @@ export default function TrendingPage() {
                     }}
                   >
                     <p className="mb-2 text-xs font-black uppercase tracking-widest" style={{ color: "#14F195" }}>
-                      Perché può diventare virale
+                      {t.whyViral}
                     </p>
                     <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
                       {aiResult.why || aiResult.twist}
@@ -729,7 +812,7 @@ export default function TrendingPage() {
                     }}
                   >
                     <p className="mb-2 text-xs font-black uppercase tracking-widest" style={{ color: "#9945FF" }}>
-                      Strategia
+                      {t.strategy}
                     </p>
                     <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
                       {aiResult.strategy}
@@ -742,7 +825,7 @@ export default function TrendingPage() {
                   className="w-full rounded-2xl border-0 p-4 font-black text-white transition-all hover:scale-[1.01]"
                   style={{ background: "linear-gradient(135deg, #9945FF, #14F195)" }}
                 >
-                  Usa questo token — Apri SolMint
+                  {t.useToken}
                 </button>
               </div>
             )}

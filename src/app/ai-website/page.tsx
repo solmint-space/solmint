@@ -1,18 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import GenerateStatusCard from "@/components/ai-website/GenerateStatusCard";
 
-type Vibe =
-  | "auto"
-  | "meme"
-  | "degen"
-  | "premium"
-  | "cute"
-  | "cyber"
-  | "retro"
-  | "cosmic";
+type Vibe = "auto" | "meme" | "degen" | "premium" | "cute" | "cyber" | "retro" | "cosmic";
 
 type Theme = {
   label: string;
@@ -84,14 +76,12 @@ const THEMES: Record<Exclude<Vibe, "auto">, Theme> = {
 
 function detectTheme(name: string, desc: string): Exclude<Vibe, "auto"> {
   const txt = `${name} ${desc}`.toLowerCase();
-
-  if (/(ai|bot|gpt|agent|cyber|neural)/.test(txt)) return "cyber";
-  if (/(space|moon|mars|orbit|star|rocket)/.test(txt)) return "cosmic";
-  if (/(dog|cat|frog|peng|cute|baby|animal)/.test(txt)) return "cute";
-  if (/(premium|lux|elite|diamond|gold)/.test(txt)) return "premium";
-  if (/(degen|ape|100x|pump|casino|fire)/.test(txt)) return "degen";
-  if (/(retro|pixel|arcade|8bit)/.test(txt)) return "retro";
-
+  if (/(ai|bot|gpt|agent|cyber|neural|robot)/.test(txt)) return "cyber";
+  if (/(space|moon|mars|orbit|star|rocket|cosmic|galaxy)/.test(txt)) return "cosmic";
+  if (/(dog|cat|frog|peng|cute|baby|animal|wif|puppy)/.test(txt)) return "cute";
+  if (/(premium|lux|elite|diamond|gold|silver)/.test(txt)) return "premium";
+  if (/(degen|ape|100x|pump|casino|fire|defi)/.test(txt)) return "degen";
+  if (/(retro|pixel|arcade|8bit|game)/.test(txt)) return "retro";
   return "meme";
 }
 
@@ -105,21 +95,42 @@ export default function AIWebsitePage() {
 
   const [vibe, setVibe] = useState<Vibe>("auto");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isFetchingDex, setIsFetchingDex] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState("");
+  const [dexFound, setDexFound] = useState(false);
 
   const detected = detectTheme(tokenName, description);
   const finalVibe = vibe === "auto" ? detected : vibe;
   const theme = THEMES[finalVibe];
 
-  const preview = useMemo(() => {
-    return {
-      title: `${tokenName} enters the timeline.`,
-      subtitle:
-        "AI-generated launch website with custom visuals, roadmap, tokenomics, live chart integration and meme-native branding.",
-    };
-  }, [tokenName]);
+  const preview = useMemo(() => ({
+    title: `${tokenName} enters the timeline.`,
+    subtitle: "AI-generated launch website with custom visuals, roadmap, tokenomics, live chart and meme-native branding.",
+  }), [tokenName]);
+
+  const fetchDexScreener = useCallback(async (ca: string) => {
+    if (!ca || ca.length < 32) return;
+    try {
+      setIsFetchingDex(true);
+      setDexFound(false);
+      const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${ca}`);
+      const data = await res.json();
+      const pair = data?.pairs?.[0];
+      if (pair) {
+        setDexFound(true);
+        if (pair.baseToken?.name) setTokenName(pair.baseToken.name);
+        if (pair.baseToken?.symbol) setSymbol(pair.baseToken.symbol.toUpperCase());
+        if (pair.baseToken?.name) {
+          setDescription(`${pair.baseToken.name} ($${pair.baseToken.symbol}) is a live Solana token. Price: $${parseFloat(pair.priceUsd || "0").toFixed(8)} · Market Cap: ${pair.fdv ? "$" + (pair.fdv / 1_000_000).toFixed(2) + "M" : "N/A"} · 24h Volume: ${pair.volume?.h24 ? "$" + (pair.volume.h24 / 1_000).toFixed(1) + "K" : "N/A"}.`);
+        }
+        if (pair.info?.imageUrl) setLogoPreview(pair.info.imageUrl);
+      }
+    } catch {}
+    finally {
+      setIsFetchingDex(false);
+    }
+  }, []);
 
   async function handleGenerate() {
     try {
@@ -128,27 +139,15 @@ export default function AIWebsitePage() {
 
       const res = await fetch("/api/ai-website/generate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tokenName,
-          symbol,
-          mint,
-          description,
-          logoUrl: logoPreview,
-          theme,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tokenName, symbol, mint, description, logoUrl: logoPreview, theme }),
       });
 
       const data = await res.json();
-
-      if (data?.url) {
-        setGeneratedUrl(data.url);
-      }
+      if (data?.url) setGeneratedUrl(data.url);
     } catch (err) {
       console.error(err);
-      alert("Generation failed.");
+      alert("Generation failed. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -161,271 +160,144 @@ export default function AIWebsitePage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden text-white" style={{ background: "#040406" }}>
+    <main className="min-h-screen overflow-x-hidden text-white" style={{ background: "#07070f" }}>
       {isGenerating && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            background: "rgba(0,0,0,.72)",
-            backdropFilter: "blur(18px)",
-            display: "grid",
-            placeItems: "center",
-            padding: 24,
-          }}
-        >
-          <div
-            style={{
-              width: "min(560px, 100%)",
-              borderRadius: 34,
-              padding: 32,
-              background: "rgba(10,10,20,.92)",
-              border: "1px solid rgba(255,255,255,.12)",
-              boxShadow: "0 40px 140px rgba(0,0,0,.6)",
-            }}
-          >
-            <div style={{ color: theme.accent, fontWeight: 950, marginBottom: 14 }}>
-              AI IS BUILDING YOUR MEMECOIN WEBSITE
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,.78)", backdropFilter: "blur(22px)", display: "grid", placeItems: "center", padding: 24 }}>
+          <div style={{ width: "min(580px, 100%)", borderRadius: 36, padding: 36, background: "rgba(8,8,20,.95)", border: "1px solid rgba(255,255,255,.12)", boxShadow: "0 40px 160px rgba(0,0,0,.7)" }}>
+            <div style={{ color: theme.accent, fontWeight: 950, fontSize: 12, letterSpacing: "0.1em", marginBottom: 14 }}>AI IS BUILDING YOUR MEMECOIN WEBSITE</div>
+            <h2 style={{ fontSize: 42, lineHeight: 0.95, fontWeight: 950, letterSpacing: "-.06em", marginBottom: 10 }}>Generating visuals,<br />layout & launch page.</h2>
+            <p style={{ color: "rgba(255,255,255,.45)", marginBottom: 24, fontSize: 15 }}>Creating AI copy, theme, tokenomics, roadmap and live chart setup...</p>
+            <div style={{ height: 10, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 999, background: `linear-gradient(90deg, ${theme.accent}, ${theme.second})`, animation: "loadingBar 1.5s ease-in-out infinite alternate" }} />
             </div>
-
-            <h2
-              style={{
-                fontSize: 42,
-                lineHeight: 0.95,
-                fontWeight: 950,
-                letterSpacing: "-.06em",
-                marginBottom: 24,
-              }}
-            >
-              Generating visuals,
-              <br />
-              layout & launch page.
-            </h2>
-
-            <div
-              style={{
-                height: 14,
-                borderRadius: 999,
-                background: "rgba(255,255,255,.08)",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: "72%",
-                  borderRadius: 999,
-                  background: `linear-gradient(90deg, ${theme.accent}, ${theme.second})`,
-                  animation: "loadingBar 1.2s ease-in-out infinite alternate",
-                }}
-              />
+            <div style={{ display: "flex", gap: 8, marginTop: 22, flexWrap: "wrap" }}>
+              {["Fetching DexScreener", "Generating AI copy", "Building sections", "Creating visuals"].map((step, i) => (
+                <span key={step} style={{ padding: "6px 12px", borderRadius: 999, fontSize: 12, fontWeight: 800, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", color: i === 1 ? theme.accent : "rgba(255,255,255,.5)" }}>
+                  {step}
+                </span>
+              ))}
             </div>
-
-            <p style={{ color: "rgba(255,255,255,.5)", marginTop: 18, lineHeight: 1.6 }}>
-              Creating AI copy, theme, token sections, visuals and live chart setup...
-            </p>
-
-            <style>{`
-              @keyframes loadingBar {
-                from { width: 28%; transform: translateX(0); }
-                to { width: 92%; transform: translateX(8%); }
-              }
-            `}</style>
+            <style>{`@keyframes loadingBar { from { width: 22%; } to { width: 94%; } }`}</style>
           </div>
         </div>
       )}
 
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0" style={{ background: theme.bg }} />
-
-        <div
-          className="absolute inset-0 opacity-35"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px)",
-            backgroundSize: "72px 72px",
-          }}
-        />
+        <div className="absolute inset-0" style={{ background: "radial-gradient(circle at 50% 0%, rgba(153,69,255,0.16), transparent 38%), radial-gradient(circle at 85% 28%, rgba(20,241,149,0.10), transparent 34%), linear-gradient(180deg, #07070f, #090914 45%, #050509)" }} />
+        <div className="absolute inset-0 opacity-28" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px)", backgroundSize: "72px 72px", maskImage: "radial-gradient(circle at center, black, transparent 72%)" }} />
+        {/* Subtle vibe accent */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-[120px] opacity-20 transition-all duration-700" style={{ background: theme.accent }} />
       </div>
 
       <nav className="relative z-20 px-5 py-5">
-        <div
-          className="max-w-7xl mx-auto rounded-full px-5 py-4 flex items-center justify-between"
-          style={{
-            background: "rgba(5,5,12,.62)",
-            border: "1px solid rgba(255,255,255,.1)",
-            backdropFilter: "blur(18px)",
-          }}
-        >
-          <Link href="/" className="text-white no-underline font-black text-xl">
-            SolMint Space
-          </Link>
-
-          <Link
-            href="/"
-            style={{
-              color: "rgba(255,255,255,.65)",
-              textDecoration: "none",
-              fontWeight: 900,
-            }}
-          >
-            ← Home
-          </Link>
+        <div className="max-w-7xl mx-auto rounded-full px-5 py-4 flex items-center justify-between" style={{ background: "rgba(5,5,12,.7)", border: "1px solid rgba(255,255,255,.1)", backdropFilter: "blur(18px)" }}>
+          <Link href="/" className="text-white no-underline font-black text-xl tracking-tight">SolMint Space</Link>
+          <div className="hidden sm:flex items-center gap-6">
+            <Link href="/trending" style={{ color: "rgba(255,255,255,.55)", textDecoration: "none", fontWeight: 800, fontSize: 14 }}>Trending</Link>
+            <Link href="/ai-meme" style={{ color: "rgba(255,255,255,.55)", textDecoration: "none", fontWeight: 800, fontSize: 14 }}>AI Meme</Link>
+          </div>
+          <Link href="/" style={{ color: "rgba(255,255,255,.55)", textDecoration: "none", fontWeight: 900, fontSize: 14 }}>← Home</Link>
         </div>
       </nav>
 
-      <section className="relative z-10 px-5 pt-8 pb-16">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-[.9fr_1.1fr] gap-6 items-start">
+      <section className="relative z-10 px-5 pt-8 pb-20">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-[.9fr_1.1fr] gap-8 items-start">
           <div>
-            <div
-              style={{
-                display: "inline-flex",
-                padding: "10px 16px",
-                borderRadius: 999,
-                background: "rgba(255,255,255,.08)",
-                border: "1px solid rgba(255,255,255,.1)",
-                color: theme.accent,
-                fontSize: 12,
-                fontWeight: 950,
-                marginBottom: 26,
-              }}
-            >
+            <div style={{ display: "inline-flex", padding: "10px 18px", borderRadius: 999, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.12)", color: theme.accent, fontSize: 12, fontWeight: 950, letterSpacing: "0.1em", marginBottom: 28 }}>
               ✦ AI MEMECOIN WEBSITE ENGINE
             </div>
 
-            <h1
-              style={{
-                fontSize: "clamp(54px,8vw,108px)",
-                lineHeight: 0.9,
-                letterSpacing: "-0.08em",
-                fontWeight: 950,
-                marginBottom: 24,
-              }}
-            >
-              Generate
-              <br />
-              <span
-                style={{
-                  background: `linear-gradient(90deg, ${theme.accent}, ${theme.second})`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
+            <h1 style={{ fontSize: "clamp(52px,8vw,108px)", lineHeight: 0.9, letterSpacing: "-0.08em", fontWeight: 950, marginBottom: 22 }}>
+              Generate<br />
+              <span style={{ background: `linear-gradient(90deg, ${theme.accent}, ${theme.second})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                 launch sites.
               </span>
             </h1>
 
-            <p
-              style={{
-                color: "rgba(255,255,255,.62)",
-                fontSize: 18,
-                lineHeight: 1.8,
-                marginBottom: 34,
-                maxWidth: 700,
-              }}
-            >
-              AI creates a complete memecoin launch experience with visuals,
-              branding, tokenomics, live chart integration and meme-native design.
+            <p style={{ color: "rgba(255,255,255,.6)", fontSize: 18, lineHeight: 1.8, marginBottom: 36, maxWidth: 680 }}>
+              Enter a CA and AI auto-fetches all DexScreener data — price, socials, chart — and builds a complete launch page for your memecoin in seconds.
             </p>
 
-            <div
-              className="rounded-[34px] p-6 space-y-5"
-              style={{
-                background: "rgba(255,255,255,.04)",
-                border: "1px solid rgba(255,255,255,.1)",
-                backdropFilter: "blur(20px)",
-                boxShadow: "0 30px 120px rgba(0,0,0,.42)",
-              }}
-            >
-              <input
-                value={mint}
-                onChange={(e) => setMint(e.target.value)}
-                placeholder="Paste Solana token mint..."
-                className="w-full rounded-2xl px-4 py-4 bg-white/5 border border-white/10 text-white focus:outline-none"
-              />
+            <div className="rounded-[36px] p-6 space-y-4" style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)", backdropFilter: "blur(22px)", boxShadow: "0 30px 130px rgba(0,0,0,.45)" }}>
 
-              <div className="grid sm:grid-cols-2 gap-4">
+              {/* CA input with auto-fetch */}
+              <div style={{ position: "relative" }}>
                 <input
-                  value={tokenName}
-                  onChange={(e) => setTokenName(e.target.value)}
-                  placeholder="Token Name"
-                  className="w-full rounded-2xl px-4 py-4 bg-white/5 border border-white/10 text-white focus:outline-none"
+                  value={mint}
+                  onChange={(e) => { setMint(e.target.value); setDexFound(false); }}
+                  onBlur={(e) => fetchDexScreener(e.target.value.trim())}
+                  placeholder="Paste Solana token mint address (CA)..."
+                  className="w-full rounded-2xl px-4 py-4 bg-white/5 border border-white/10 text-white focus:outline-none pr-32"
+                  style={{ fontFamily: "monospace", fontSize: 13 }}
                 />
-
-                <input
-                  value={symbol}
-                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                  placeholder="Symbol"
-                  className="w-full rounded-2xl px-4 py-4 bg-white/5 border border-white/10 text-white focus:outline-none"
-                />
+                {isFetchingDex && (
+                  <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: theme.accent, fontWeight: 800 }}>
+                    Fetching...
+                  </div>
+                )}
+                {dexFound && !isFetchingDex && (
+                  <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#14F195", fontWeight: 900, display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#14F195", display: "inline-block" }} />
+                    Found on Dex
+                  </div>
+                )}
               </div>
 
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={5}
-                className="w-full rounded-2xl px-4 py-4 bg-white/5 border border-white/10 text-white focus:outline-none resize-none"
-              />
+              {dexFound && (
+                <div style={{ padding: "10px 16px", borderRadius: 16, background: "rgba(20,241,149,.08)", border: "1px solid rgba(20,241,149,.2)", fontSize: 13, color: "#14F195", fontWeight: 800 }}>
+                  ✓ Token found on DexScreener — name, symbol and stats auto-filled
+                </div>
+              )}
 
-              <label
-                className="rounded-[28px] p-5 flex items-center gap-4 cursor-pointer"
-                style={{
-                  background: "rgba(255,255,255,.04)",
-                  border: "1px dashed rgba(255,255,255,.18)",
-                }}
-              >
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 24,
-                    overflow: "hidden",
-                    display: "grid",
-                    placeItems: "center",
-                    background: `linear-gradient(135deg, ${theme.accent}, ${theme.second})`,
-                  }}
-                >
+              <div className="grid sm:grid-cols-2 gap-4">
+                <input value={tokenName} onChange={(e) => setTokenName(e.target.value)} placeholder="Token Name" className="w-full rounded-2xl px-4 py-4 bg-white/5 border border-white/10 text-white focus:outline-none" />
+                <input value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} placeholder="Symbol" className="w-full rounded-2xl px-4 py-4 bg-white/5 border border-white/10 text-white focus:outline-none" />
+              </div>
+
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder="Describe your token — vibe, story, what makes it special..." className="w-full rounded-2xl px-4 py-4 bg-white/5 border border-white/10 text-white focus:outline-none resize-none" />
+
+              <label className="rounded-[28px] p-4 flex items-center gap-4 cursor-pointer" style={{ background: "rgba(255,255,255,.04)", border: "1px dashed rgba(255,255,255,.18)" }}>
+                <div style={{ width: 64, height: 64, borderRadius: 20, overflow: "hidden", display: "grid", placeItems: "center", background: `linear-gradient(135deg, ${theme.accent}, ${theme.second})`, flexShrink: 0 }}>
                   {logoPreview ? (
                     <img src={logoPreview} alt="logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <span style={{ fontSize: 32 }}>🖼️</span>
+                    <span style={{ fontSize: 28 }}>🖼️</span>
                   )}
                 </div>
-
                 <div>
-                  <div style={{ fontWeight: 900 }}>Upload token artwork</div>
-                  <div style={{ color: "rgba(255,255,255,.45)", fontSize: 13, marginTop: 4 }}>
-                    AI uses this for branding and visuals.
-                  </div>
+                  <div style={{ fontWeight: 900 }}>Upload token artwork <span style={{ color: "rgba(255,255,255,.4)", fontWeight: 700 }}>(optional)</span></div>
+                  <div style={{ color: "rgba(255,255,255,.4)", fontSize: 13, marginTop: 4 }}>AI uses this for branding. Auto-pulled from Dex if available.</div>
                 </div>
-
                 <input type="file" accept="image/*" className="hidden" onChange={handleLogo} />
               </label>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {(["auto", "meme", "degen", "premium", "cute", "cyber", "retro", "cosmic"] as Vibe[]).map((key) => {
-                  const active = vibe === key;
-
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setVibe(key)}
-                      style={{
-                        padding: "12px 14px",
-                        borderRadius: 18,
-                        border: active ? `1px solid ${theme.accent}` : "1px solid rgba(255,255,255,.1)",
-                        background: active ? "rgba(255,255,255,.1)" : "rgba(255,255,255,.04)",
-                        color: "white",
-                        fontWeight: 850,
-                        fontSize: 13,
-                      }}
-                    >
-                      {key === "auto" ? "✨ Auto" : `${THEMES[key].emoji} ${THEMES[key].label}`}
-                    </button>
-                  );
-                })}
+              {/* Vibe selector */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.4)", marginBottom: 10, letterSpacing: "0.08em" }}>WEBSITE STYLE</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(["auto", "meme", "degen", "premium", "cute", "cyber", "retro", "cosmic"] as Vibe[]).map((key) => {
+                    const active = vibe === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setVibe(key)}
+                        style={{
+                          padding: "11px 12px",
+                          borderRadius: 16,
+                          border: active ? `1.5px solid ${theme.accent}` : "1px solid rgba(255,255,255,.1)",
+                          background: active ? `${theme.accent}18` : "rgba(255,255,255,.04)",
+                          color: active ? theme.accent : "rgba(255,255,255,.7)",
+                          fontWeight: active ? 900 : 700,
+                          fontSize: 13,
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {key === "auto" ? "✨ Auto" : `${THEMES[key].emoji} ${THEMES[key].label}`}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <button
@@ -434,146 +306,82 @@ export default function AIWebsitePage() {
                 disabled={isGenerating}
                 style={{
                   width: "100%",
-                  height: 74,
-                  borderRadius: 24,
+                  height: 72,
+                  borderRadius: 22,
                   border: "none",
                   background: `linear-gradient(135deg, ${theme.second}, ${theme.accent})`,
                   color: "white",
                   fontWeight: 950,
                   fontSize: 18,
-                  boxShadow: "0 22px 70px rgba(153,69,255,.35)",
+                  boxShadow: `0 22px 80px ${theme.accent}40`,
                   cursor: isGenerating ? "not-allowed" : "pointer",
                   opacity: isGenerating ? 0.7 : 1,
+                  letterSpacing: "-0.01em",
                 }}
               >
-                {isGenerating ? "Generating AI Website..." : "Generate Website — FREE"}
+                {isGenerating ? "⚙️ Building your website..." : "✦ Generate Website — FREE"}
               </button>
 
               {generatedUrl && <GenerateStatusCard generatedUrl={generatedUrl} />}
             </div>
+
+            {/* Features */}
+            <div className="grid sm:grid-cols-3 gap-3 mt-5">
+              {[
+                { icon: "🔗", title: "Dex Auto-fill", desc: "Paste CA → pulls name, price, socials" },
+                { icon: "📊", title: "Live Chart", desc: "DexScreener embedded in site" },
+                { icon: "🎨", title: "AI Design", desc: "Custom theme, copy & visuals" },
+              ].map((f) => (
+                <div key={f.title} className="rounded-[22px] p-4" style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+                  <div style={{ fontSize: 22, marginBottom: 6 }}>{f.icon}</div>
+                  <div style={{ fontWeight: 900, fontSize: 14 }}>{f.title}</div>
+                  <div style={{ color: "rgba(255,255,255,.45)", fontSize: 13, marginTop: 2 }}>{f.desc}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div
-            className="rounded-[42px] overflow-hidden"
-            style={{
-              background: "rgba(255,255,255,.04)",
-              border: "1px solid rgba(255,255,255,.1)",
-              boxShadow: "0 30px 140px rgba(0,0,0,.5)",
-            }}
-          >
-            <div
-              style={{
-                minHeight: 820,
-                position: "relative",
-                overflow: "hidden",
-                background: theme.bg,
-                padding: 32,
-              }}
-            >
-              <div
-                className="rounded-[30px] p-6"
-                style={{
-                  background: "rgba(0,0,0,.35)",
-                  border: "1px solid rgba(255,255,255,.1)",
-                  backdropFilter: "blur(22px)",
-                }}
-              >
-                <div className="flex items-center gap-4 mb-12">
-                  <div
-                    style={{
-                      width: 76,
-                      height: 76,
-                      borderRadius: 28,
-                      overflow: "hidden",
-                      display: "grid",
-                      placeItems: "center",
-                      background: `linear-gradient(135deg, ${theme.accent}, ${theme.second})`,
-                    }}
-                  >
-                    {logoPreview ? (
-                      <img src={logoPreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      <span style={{ fontSize: 36 }}>{theme.emoji}</span>
-                    )}
+          {/* Live preview */}
+          <div className="rounded-[44px] overflow-hidden sticky top-6" style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)", boxShadow: "0 30px 150px rgba(0,0,0,.55)" }}>
+            <div style={{ minHeight: 860, position: "relative", overflow: "hidden", background: theme.bg, padding: 28 }}>
+              <div className="rounded-[28px] p-6 mb-4" style={{ background: "rgba(0,0,0,.38)", border: "1px solid rgba(255,255,255,.1)", backdropFilter: "blur(22px)" }}>
+                <div className="flex items-center gap-4 mb-8">
+                  <div style={{ width: 68, height: 68, borderRadius: 24, overflow: "hidden", display: "grid", placeItems: "center", background: `linear-gradient(135deg, ${theme.accent}, ${theme.second})`, flexShrink: 0 }}>
+                    {logoPreview ? <img src={logoPreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 32 }}>{theme.emoji}</span>}
                   </div>
-
                   <div>
-                    <div style={{ fontSize: 28, fontWeight: 950 }}>{tokenName}</div>
-                    <div style={{ color: "rgba(255,255,255,.45)", fontWeight: 800 }}>${symbol}</div>
+                    <div style={{ fontSize: 26, fontWeight: 950, lineHeight: 1 }}>{tokenName}</div>
+                    <div style={{ color: "rgba(255,255,255,.4)", fontWeight: 800, marginTop: 4 }}>${symbol}</div>
                   </div>
+                  {dexFound && (
+                    <div style={{ marginLeft: "auto", padding: "6px 12px", borderRadius: 999, background: "rgba(20,241,149,.12)", border: "1px solid rgba(20,241,149,.3)", fontSize: 11, fontWeight: 900, color: "#14F195" }}>
+                      LIVE
+                    </div>
+                  )}
                 </div>
 
-                <h2
-                  style={{
-                    fontSize: "clamp(56px,6vw,92px)",
-                    lineHeight: 0.88,
-                    letterSpacing: "-0.08em",
-                    fontWeight: 950,
-                    marginBottom: 20,
-                  }}
-                >
+                <h2 style={{ fontSize: "clamp(48px,5vw,84px)", lineHeight: 0.88, letterSpacing: "-0.08em", fontWeight: 950, marginBottom: 16 }}>
                   {preview.title}
                 </h2>
-
-                <p
-                  style={{
-                    color: "rgba(255,255,255,.65)",
-                    lineHeight: 1.8,
-                    fontSize: 18,
-                    maxWidth: 720,
-                    marginBottom: 28,
-                  }}
-                >
+                <p style={{ color: "rgba(255,255,255,.6)", lineHeight: 1.7, fontSize: 16, marginBottom: 24 }}>
                   {preview.subtitle}
                 </p>
 
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    style={{
-                      padding: "16px 22px",
-                      borderRadius: 18,
-                      border: "none",
-                      background: theme.accent,
-                      color: "#050509",
-                      fontWeight: 950,
-                      fontSize: 16,
-                    }}
-                  >
+                  <button style={{ padding: "14px 22px", borderRadius: 16, border: "none", background: theme.accent, color: "#050509", fontWeight: 950, fontSize: 15 }}>
                     BUY ${symbol}
                   </button>
-
-                  <button
-                    style={{
-                      padding: "16px 22px",
-                      borderRadius: 18,
-                      border: "1px solid rgba(255,255,255,.1)",
-                      background: "rgba(255,255,255,.06)",
-                      color: "white",
-                      fontWeight: 900,
-                      fontSize: 16,
-                    }}
-                  >
+                  <button style={{ padding: "14px 22px", borderRadius: 16, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.06)", color: "white", fontWeight: 900, fontSize: 15 }}>
                     JOIN COMMUNITY
                   </button>
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-3 gap-4 mt-6">
-                {["Live Dex Chart", "AI Meme Branding", "Tokenomics & Roadmap"].map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[28px] p-5"
-                    style={{
-                      background: "rgba(0,0,0,.35)",
-                      border: "1px solid rgba(255,255,255,.08)",
-                      backdropFilter: "blur(18px)",
-                    }}
-                  >
-                    <div style={{ color: theme.accent, fontSize: 12, fontWeight: 950, marginBottom: 8 }}>
-                      AI GENERATED
-                    </div>
-
-                    <div style={{ fontWeight: 900, fontSize: 18, lineHeight: 1.4 }}>{item}</div>
+              <div className="grid grid-cols-2 gap-3">
+                {["📊 Live Dex Chart", "🤖 AI Branding", "📋 Tokenomics", "🗺️ Roadmap"].map((item) => (
+                  <div key={item} className="rounded-[22px] p-4" style={{ background: "rgba(0,0,0,.38)", border: "1px solid rgba(255,255,255,.08)", backdropFilter: "blur(18px)" }}>
+                    <div style={{ color: theme.accent, fontSize: 11, fontWeight: 950, marginBottom: 6, letterSpacing: "0.08em" }}>AI GENERATED</div>
+                    <div style={{ fontWeight: 900, fontSize: 15 }}>{item}</div>
                   </div>
                 ))}
               </div>

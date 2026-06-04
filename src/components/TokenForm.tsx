@@ -254,7 +254,7 @@ style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,
           <div className="bg-green-900/30 border border-green-800 rounded-xl px-4 py-3 space-y-2">
             <div className="text-green-400 text-sm font-medium">✅ Token creato!</div>
             <div className="text-xs text-gray-400 break-all">{mintAddress}</div>
-            <a href={`https://solscan.io/token/${mintAddress}?cluster=devnet`} target="_blank" className="text-xs text-purple-400 hover:underline">Vedi su Solscan →</a>
+            <a href={`https://solscan.io/token/${mintAddress}`} target="_blank" className="text-xs text-purple-400 hover:underline">View on Solscan →</a>
           </div>
         )}
 

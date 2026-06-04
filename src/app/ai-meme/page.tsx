@@ -3,30 +3,119 @@
 import { useEffect, useState } from "react";
 import SiteNavbar from "@/components/SiteNavbar";
 import SiteFooter from "@/components/SiteFooter";
+import { useLang } from "@/lib/useLang";
 
-const NICHES = [
-  "Animali",
-  "Politica",
-  "Gaming",
-  "Crypto/AI",
-  "Sport",
-  "Cibo",
-  "Musica",
-  "Film/TV",
-  "Meme classici",
-  "Sorpresa",
-];
+const NICHES_BY_LANG: Record<string, string[]> = {
+  IT: ["Animali","Politica","Gaming","Crypto/AI","Sport","Cibo","Musica","Film/TV","Meme classici","Sorpresa"],
+  EN: ["Animals","Politics","Gaming","Crypto/AI","Sports","Food","Music","Film/TV","Classic Memes","Surprise"],
+  ES: ["Animales","Política","Gaming","Crypto/IA","Deportes","Comida","Música","Cine/TV","Memes clásicos","Sorpresa"],
+  FR: ["Animaux","Politique","Gaming","Crypto/IA","Sports","Nourriture","Musique","Cinéma/TV","Mèmes classiques","Surprise"],
+  PT: ["Animais","Política","Gaming","Crypto/IA","Esportes","Comida","Música","Cinema/TV","Memes clássicos","Surpresa"],
+  DE: ["Tiere","Politik","Gaming","Crypto/KI","Sport","Essen","Musik","Film/TV","Klassische Memes","Überraschung"],
+};
+const TONES_BY_LANG: Record<string, string[]> = {
+  IT: ["Divertente","Aggressivo","Wholesome","Ironico","Epico","Cringe"],
+  EN: ["Funny","Aggressive","Wholesome","Ironic","Epic","Cringe"],
+  ES: ["Divertido","Agresivo","Entrañable","Irónico","Épico","Cringe"],
+  FR: ["Drôle","Agressif","Bienveillant","Ironique","Épique","Cringe"],
+  PT: ["Engraçado","Agressivo","Gentil","Irônico","Épico","Cringe"],
+  DE: ["Lustig","Aggressiv","Herzlich","Ironisch","Episch","Cringe"],
+};
+const MARKETS_BY_LANG: Record<string, string[]> = {
+  IT: ["Globale","Italiano","Americano","Asiatico"],
+  EN: ["Global","Italian","American","Asian"],
+  ES: ["Global","Italiano","Americano","Asiático"],
+  FR: ["Global","Italien","Américain","Asiatique"],
+  PT: ["Global","Italiano","Americano","Asiático"],
+  DE: ["Global","Italienisch","Amerikanisch","Asiatisch"],
+};
 
-const TONES = [
-  "Divertente",
-  "Aggressivo",
-  "Wholesome",
-  "Ironico",
-  "Epico",
-  "Cringe",
-];
-
-const MARKETS = ["Globale", "Italiano", "Americano", "Asiatico"];
+const TR = {
+  IT: {
+    heading1: "Crea una meme coin", heading2: "partendo dai trend.",
+    desc: "L'AI analizza i token Solana più caldi e genera nome, ticker, descrizione, logo e strategia di lancio.",
+    configBadge: "Configura idea", configTitle: "Scegli il DNA del token",
+    nicheQ: "Che nicchia vuoi?", toneQ: "Che tono?", marketQ: "Mercato target?",
+    nameQ: "Hai un nome in mente? opzionale", namePh: "es. PizzaCoin, DogeMario...",
+    generateBtn: "Genera token con AI",
+    howTitle: "Come funziona",
+    steps: ["Legge i trend Solana live","Trova una narrativa non satura","Crea nome, ticker e lore","Genera logo e strategia"],
+    howNote: "Dopo la generazione puoi mandare il concept direttamente al launcher e creare il token.",
+    loadingMsg: "L'AI sta creando un concept pronto per il lancio.",
+    resultTitle: "Il tuo token AI", regenerate: "Rigenera",
+    copyTicker: "copia ticker", useToken: "Usa questo token — Apri SolMint", backTrend: "Torna ai trend",
+  },
+  EN: {
+    heading1: "Create a meme coin", heading2: "from real trends.",
+    desc: "AI analyzes the hottest Solana tokens and generates a name, ticker, description, logo and launch strategy.",
+    configBadge: "Configure idea", configTitle: "Choose your token DNA",
+    nicheQ: "What niche?", toneQ: "What tone?", marketQ: "Target market?",
+    nameQ: "Have a name in mind? optional", namePh: "e.g. PizzaCoin, DogeMario...",
+    generateBtn: "Generate token with AI",
+    howTitle: "How it works",
+    steps: ["Reads live Solana trends","Finds an unsaturated narrative","Creates name, ticker and lore","Generates logo and strategy"],
+    howNote: "After generation you can send the concept directly to the launcher and create the token.",
+    loadingMsg: "AI is creating a launch-ready concept.",
+    resultTitle: "Your AI token", regenerate: "Regenerate",
+    copyTicker: "copy ticker", useToken: "Use this token — Open SolMint", backTrend: "Back to trends",
+  },
+  ES: {
+    heading1: "Crea una meme coin", heading2: "desde tendencias reales.",
+    desc: "La IA analiza los tokens Solana más calientes y genera nombre, ticker, descripción, logo y estrategia de lanzamiento.",
+    configBadge: "Configurar idea", configTitle: "Elige el ADN del token",
+    nicheQ: "¿Qué nicho?", toneQ: "¿Qué tono?", marketQ: "¿Mercado objetivo?",
+    nameQ: "¿Tienes un nombre en mente? opcional", namePh: "ej. PizzaCoin, DogeMario...",
+    generateBtn: "Generar token con IA",
+    howTitle: "Cómo funciona",
+    steps: ["Lee tendencias Solana en vivo","Encuentra una narrativa no saturada","Crea nombre, ticker y lore","Genera logo y estrategia"],
+    howNote: "Después de la generación puedes enviar el concepto directamente al launcher y crear el token.",
+    loadingMsg: "La IA está creando un concepto listo para lanzar.",
+    resultTitle: "Tu token IA", regenerate: "Regenerar",
+    copyTicker: "copiar ticker", useToken: "Usar este token — Abrir SolMint", backTrend: "Volver a tendencias",
+  },
+  FR: {
+    heading1: "Créez une meme coin", heading2: "à partir des tendances.",
+    desc: "L'IA analyse les tokens Solana les plus chauds et génère nom, ticker, description, logo et stratégie de lancement.",
+    configBadge: "Configurer l'idée", configTitle: "Choisissez l'ADN du token",
+    nicheQ: "Quel niche?", toneQ: "Quel ton?", marketQ: "Marché cible?",
+    nameQ: "Vous avez un nom en tête? optionnel", namePh: "ex. PizzaCoin, DogeMario...",
+    generateBtn: "Générer le token avec l'IA",
+    howTitle: "Comment ça marche",
+    steps: ["Lit les tendances Solana en direct","Trouve un narratif non saturé","Crée nom, ticker et lore","Génère logo et stratégie"],
+    howNote: "Après la génération, envoyez le concept directement au launcher et créez le token.",
+    loadingMsg: "L'IA crée un concept prêt au lancement.",
+    resultTitle: "Votre token IA", regenerate: "Régénérer",
+    copyTicker: "copier ticker", useToken: "Utiliser ce token — Ouvrir SolMint", backTrend: "Retour aux tendances",
+  },
+  PT: {
+    heading1: "Crie uma meme coin", heading2: "a partir das tendências.",
+    desc: "A IA analisa os tokens Solana mais quentes e gera nome, ticker, descrição, logo e estratégia de lançamento.",
+    configBadge: "Configurar ideia", configTitle: "Escolha o DNA do token",
+    nicheQ: "Qual nicho?", toneQ: "Qual tom?", marketQ: "Mercado alvo?",
+    nameQ: "Tem um nome em mente? opcional", namePh: "ex. PizzaCoin, DogeMario...",
+    generateBtn: "Gerar token com IA",
+    howTitle: "Como funciona",
+    steps: ["Lê tendências Solana ao vivo","Encontra uma narrativa não saturada","Cria nome, ticker e lore","Gera logo e estratégia"],
+    howNote: "Após a geração você pode enviar o conceito diretamente ao launcher e criar o token.",
+    loadingMsg: "A IA está criando um conceito pronto para lançar.",
+    resultTitle: "Seu token IA", regenerate: "Regenerar",
+    copyTicker: "copiar ticker", useToken: "Usar este token — Abrir SolMint", backTrend: "Voltar às tendências",
+  },
+  DE: {
+    heading1: "Erstelle eine Meme Coin", heading2: "aus echten Trends.",
+    desc: "Die KI analysiert die heißesten Solana-Token und generiert Name, Ticker, Beschreibung, Logo und Startstrategie.",
+    configBadge: "Idee konfigurieren", configTitle: "Wähle die Token-DNA",
+    nicheQ: "Welche Nische?", toneQ: "Welcher Ton?", marketQ: "Zielmarkt?",
+    nameQ: "Hast du einen Namen im Kopf? optional", namePh: "z.B. PizzaCoin, DogeMario...",
+    generateBtn: "Token mit KI generieren",
+    howTitle: "So funktioniert es",
+    steps: ["Liest Solana-Trends live","Findet eine ungesättigte Narrative","Erstellt Name, Ticker und Lore","Generiert Logo und Strategie"],
+    howNote: "Nach der Generierung kannst du das Konzept direkt an den Launcher senden und den Token erstellen.",
+    loadingMsg: "Die KI erstellt ein startbereites Konzept.",
+    resultTitle: "Dein KI-Token", regenerate: "Neu generieren",
+    copyTicker: "Ticker kopieren", useToken: "Diesen Token verwenden — SolMint öffnen", backTrend: "Zurück zu Trends",
+  },
+} as const;
 
 interface AIResult {
   name: string;
@@ -67,6 +156,8 @@ function PillButton({
 }
 
 function ResultCard({ result, onUse }: { result: AIResult; onUse: () => void }) {
+  const [lang] = useLang();
+  const t = TR[lang] ?? TR["EN"];
   const copyTicker = async () => {
     await navigator.clipboard.writeText(`$${result.symbol}`);
   };
@@ -127,7 +218,7 @@ function ResultCard({ result, onUse }: { result: AIResult; onUse: () => void }) 
                 border: "1px solid rgba(153,69,255,0.2)",
               }}
             >
-              ${result.symbol} · copia ticker
+              ${result.symbol} · {t.copyTicker}
             </button>
 
             <p className="text-sm sm:text-base leading-relaxed" style={{ color: "rgba(255,255,255,0.62)" }}>
@@ -181,7 +272,7 @@ function ResultCard({ result, onUse }: { result: AIResult; onUse: () => void }) 
               boxShadow: "0 20px 50px rgba(153,69,255,0.28)",
             }}
           >
-            Usa questo token — Apri SolMint
+            {t.useToken}
           </button>
 
           <a
@@ -193,7 +284,7 @@ function ResultCard({ result, onUse }: { result: AIResult; onUse: () => void }) 
               border: "1px solid rgba(255,255,255,0.10)",
             }}
           >
-            Torna ai trend
+            {t.backTrend}
           </a>
         </div>
       </div>
@@ -202,6 +293,12 @@ function ResultCard({ result, onUse }: { result: AIResult; onUse: () => void }) 
 }
 
 export default function AIMeme() {
+  const [lang] = useLang();
+  const t = TR[lang] ?? TR["EN"];
+  const NICHES = NICHES_BY_LANG[lang] ?? NICHES_BY_LANG["EN"];
+  const TONES = TONES_BY_LANG[lang] ?? TONES_BY_LANG["EN"];
+  const MARKETS = MARKETS_BY_LANG[lang] ?? MARKETS_BY_LANG["EN"];
+
   const [mounted, setMounted] = useState(false);
   const [answers, setAnswers] = useState({
     niche: "",
@@ -339,21 +436,15 @@ export default function AIMeme() {
                 letterSpacing: "-0.055em",
               }}
             >
-              Crea una meme coin
+              {t.heading1}
               <br />
-              <span
-                style={{
-                  background: "linear-gradient(90deg, #9945FF, #14F195)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                partendo dai trend.
+              <span style={{ background: "linear-gradient(90deg, #9945FF, #14F195)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                {t.heading2}
               </span>
             </h1>
 
             <p className="mx-auto max-w-2xl text-base sm:text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.43)" }}>
-              L’AI analizza i token Solana più caldi e genera nome, ticker, descrizione, logo e strategia di lancio.
+              {t.desc}
             </p>
           </div>
 
@@ -369,15 +460,15 @@ export default function AIMeme() {
               >
                 <div className="mb-6">
                   <p className="mb-2 text-xs font-black uppercase tracking-widest" style={{ color: "#14F195" }}>
-                    Configura idea
+                    {t.configBadge}
                   </p>
-                  <h2 className="text-2xl font-black text-white">Scegli il DNA del token</h2>
+                  <h2 className="text-2xl font-black text-white">{t.configTitle}</h2>
                 </div>
 
                 <div className="space-y-6">
                   <div>
                     <p className="mb-3 text-xs font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.34)" }}>
-                      Che nicchia vuoi?
+                      {t.nicheQ}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {NICHES.map(n => (
@@ -394,7 +485,7 @@ export default function AIMeme() {
 
                   <div>
                     <p className="mb-3 text-xs font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.34)" }}>
-                      Che tono?
+                      {t.toneQ}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {TONES.map(t => (
@@ -411,7 +502,7 @@ export default function AIMeme() {
 
                   <div>
                     <p className="mb-3 text-xs font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.34)" }}>
-                      Mercato target?
+                      {t.marketQ}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {MARKETS.map(m => (
@@ -428,10 +519,10 @@ export default function AIMeme() {
 
                   <div>
                     <p className="mb-3 text-xs font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.34)" }}>
-                      Hai un nome in mente? opzionale
+                      {t.nameQ}
                     </p>
                     <input
-                      placeholder="es. PizzaCoin, DogeMario..."
+                      placeholder={t.namePh}
                       value={answers.name}
                       onChange={e => setAnswers(a => ({ ...a, name: e.target.value }))}
                       className="w-full rounded-2xl px-4 py-4 text-sm outline-none"
@@ -470,7 +561,7 @@ export default function AIMeme() {
                       opacity: isDisabled ? 0.45 : 1,
                     }}
                   >
-                    Genera token con AI
+                    {t.generateBtn}
                   </button>
                 </div>
               </div>
@@ -483,16 +574,13 @@ export default function AIMeme() {
                 }}
               >
                 <p className="mb-3 text-xs font-black uppercase tracking-widest" style={{ color: "#9945FF" }}>
-                  Come funziona
+                  {t.howTitle}
                 </p>
 
                 <div className="space-y-4">
-                  {[
-                    ["01", "Legge i trend Solana live"],
-                    ["02", "Trova una narrativa non satura"],
-                    ["03", "Crea nome, ticker e lore"],
-                    ["04", "Genera logo e strategia"],
-                  ].map(([n, text]) => (
+                  {t.steps.map((text, idx) => {
+                    const n = String(idx + 1).padStart(2, "0");
+                    return (
                     <div key={n} className="flex items-center gap-4 rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
                       <span
                         className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black"
@@ -504,11 +592,12 @@ export default function AIMeme() {
                         {text}
                       </span>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
 
                 <p className="mt-6 text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.38)" }}>
-                  Dopo la generazione puoi mandare il concept direttamente al launcher e creare il token.
+                  {t.howNote}
                 </p>
               </aside>
             </div>
@@ -527,7 +616,7 @@ export default function AIMeme() {
 
               <p className="mb-2 text-xl font-black text-white">{loadingMsg}</p>
               <p className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>
-                L’AI sta creando un concept pronto per il lancio.
+                {t.loadingMsg}
               </p>
 
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -537,7 +626,7 @@ export default function AIMeme() {
           {result && !loading && (
             <div className="mx-auto max-w-4xl">
               <div className="mb-6 flex items-center justify-between gap-4">
-                <h2 className="text-2xl font-black text-white">Il tuo token AI</h2>
+                <h2 className="text-2xl font-black text-white">{t.resultTitle}</h2>
 
                 <button
                   onClick={() => {
@@ -551,7 +640,7 @@ export default function AIMeme() {
                     color: "rgba(255,255,255,0.7)",
                   }}
                 >
-                  Rigenera
+                  {t.regenerate}
                 </button>
               </div>
 

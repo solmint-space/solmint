@@ -1,34 +1,39 @@
 "use client";
 
 import { FC, ReactNode, useMemo } from "react";
-import {
-  ConnectionProvider,
-  WalletProvider,
-} from "@solana/wallet-adapter-react";
+import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
+  TorusWalletAdapter,
+  LedgerWalletAdapter,
+  TrustWalletAdapter,
+  CoinbaseWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { clusterApiUrl } from "@solana/web3.js";
-
-
 
 interface Props {
   children: ReactNode;
 }
 
 export const SolanaWalletProvider: FC<Props> = ({ children }) => {
-  const network = WalletAdapterNetwork.Devnet;
-  const endpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl(network);
+  const network = WalletAdapterNetwork.Mainnet;
+  const endpoint =
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
+    `https://mainnet.helius-rpc.com/?api-key=${process.env.NEXT_PUBLIC_HELIUS_KEY || ""}` ||
+    "https://api.mainnet-beta.solana.com";
 
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
+      new CoinbaseWalletAdapter(),
+      new TrustWalletAdapter(),
+      new LedgerWalletAdapter(),
+      new TorusWalletAdapter(),
     ],
-    [network]
+    []
   );
 
   return (

@@ -10,31 +10,27 @@ export const TEXTS = {
       ai: "AI Meme",
       launch: "Lancia App",
     },
-
     hero: {
       badge: "Trustless · Non-custodial · AI-powered",
       title1: "Il modo più semplice",
       title2: "per lanciare",
       title3: "su Solana.",
-      desc: "Crea token SPL professionali in 60 secondi. Usa i trend Solana e l’AI Meme Generator per trovare la narrativa giusta prima di lanciare.",
+      desc: "Crea token SPL professionali in 60 secondi. Usa i trend Solana e l'AI Meme Generator per trovare la narrativa giusta prima di lanciare.",
       create: "Crea il tuo token",
       how: "Come funziona",
       ai: "Genera idea AI",
-      note: "Nessuna registrazione. Connetti Phantom, trova il trend e inizia.",
+      note: "Nessuna registrazione. Connetti il wallet, trova il trend e inizia.",
     },
-
     stats: {
       create: "Per creare un token",
       secure: "On-chain e non-custodial",
     },
-
     aiSection: {
       badge: "Trending + AI Meme",
       title1: "Non lanciare a caso.",
       title2: "Lancia sulla narrativa giusta.",
       desc: "SolMint non è solo un token launcher: ti aiuta a trovare i trend Solana più forti, trasformarli in idee memecoin e lanciarle on-chain in pochi minuti.",
     },
-
     pricing: {
       badge: "Prezzi",
       title1: "Trasparenti.",
@@ -42,19 +38,13 @@ export const TEXTS = {
       desc: "Paghi una volta. Nessun abbonamento. Nessuna sorpresa.",
       button: "Inizia ora",
     },
-
-    faq: {
-      badge: "FAQ",
-      title: "Hai domande?",
-    },
-
+    faq: { badge: "FAQ", title: "Hai domande?" },
     cta: {
       title1: "Pronto",
       title2: "a lanciare?",
       desc: "Trova un trend, genera una meme idea con AI e crea il tuo token in meno di 60 secondi.",
       button: "Crea il tuo token",
     },
-
     footer: {
       desc: "Crea token SPL, prepara il lancio con strumenti AI e gestisci la liquidità in modo non-custodial su Solana.",
       rights: "Tutti i diritti riservati.",
@@ -73,7 +63,6 @@ export const TEXTS = {
       ai: "AI Meme",
       launch: "Launch App",
     },
-
     hero: {
       badge: "Trustless · Non-custodial · AI-powered",
       title1: "The easiest way",
@@ -83,21 +72,18 @@ export const TEXTS = {
       create: "Create your token",
       how: "How it works",
       ai: "Generate AI idea",
-      note: "No registration needed. Connect Phantom, find a trend and launch.",
+      note: "No registration needed. Connect your wallet, find a trend and launch.",
     },
-
     stats: {
       create: "To create a token",
       secure: "On-chain & non-custodial",
     },
-
     aiSection: {
       badge: "Trending + AI Meme",
-      title1: "Don’t launch randomly.",
+      title1: "Don't launch randomly.",
       title2: "Launch with the right narrative.",
       desc: "SolMint is more than a token launcher: discover trending Solana narratives, turn them into meme coin ideas and launch them on-chain in minutes.",
     },
-
     pricing: {
       badge: "Pricing",
       title1: "Transparent.",
@@ -105,23 +91,231 @@ export const TEXTS = {
       desc: "Pay once. No subscriptions. No hidden fees.",
       button: "Get Started",
     },
-
-    faq: {
-      badge: "FAQ",
-      title: "Questions?",
-    },
-
+    faq: { badge: "FAQ", title: "Questions?" },
     cta: {
       title1: "Ready",
       title2: "to launch?",
       desc: "Find a trend, generate an AI meme idea and create your token in under 60 seconds.",
       button: "Create your token",
     },
-
     footer: {
       desc: "Create SPL tokens, prepare launches with AI tools and manage liquidity in a fully non-custodial way on Solana.",
       rights: "All rights reserved.",
       built: "Built on Solana.",
     },
   },
+
+  ES: {
+    nav: {
+      features: "Características",
+      how: "Cómo funciona",
+      pricing: "Precios",
+      faq: "FAQ",
+      trending: "Trending",
+      guides: "Guías",
+      ai: "AI Meme",
+      launch: "Lanzar App",
+    },
+    hero: {
+      badge: "Sin custodia · Trustless · Con IA",
+      title1: "La forma más fácil",
+      title2: "de lanzar",
+      title3: "en Solana.",
+      desc: "Crea tokens SPL profesionales en 60 segundos. Usa tendencias de Solana y el AI Meme Generator para encontrar la narrativa correcta antes de lanzar.",
+      create: "Crear tu token",
+      how: "Cómo funciona",
+      ai: "Generar idea IA",
+      note: "Sin registro. Conecta tu wallet, encuentra una tendencia y empieza.",
+    },
+    stats: {
+      create: "Para crear un token",
+      secure: "On-chain y sin custodia",
+    },
+    aiSection: {
+      badge: "Trending + AI Meme",
+      title1: "No lances al azar.",
+      title2: "Lanza con la narrativa correcta.",
+      desc: "SolMint te ayuda a descubrir tendencias, generar ideas memecoin y pasar de concepto a token live en minutos.",
+    },
+    pricing: {
+      badge: "Precios",
+      title1: "Transparentes.",
+      title2: "Definitivos.",
+      desc: "Pagas una vez. Sin suscripciones. Sin sorpresas.",
+      button: "Empezar ahora",
+    },
+    faq: { badge: "FAQ", title: "¿Tienes preguntas?" },
+    cta: {
+      title1: "¿Listo",
+      title2: "para lanzar?",
+      desc: "Encuentra una tendencia, genera una idea meme con IA y crea tu token en menos de 60 segundos.",
+      button: "Crear tu token",
+    },
+    footer: {
+      desc: "Crea tokens SPL, prepara lanzamientos con herramientas de IA y gestiona liquidez sin custodia en Solana.",
+      rights: "Todos los derechos reservados.",
+      built: "Construido en Solana.",
+    },
+  },
+
+  FR: {
+    nav: {
+      features: "Fonctionnalités",
+      how: "Comment ça marche",
+      pricing: "Tarifs",
+      faq: "FAQ",
+      trending: "Tendances",
+      guides: "Guides",
+      ai: "AI Meme",
+      launch: "Lancer l'App",
+    },
+    hero: {
+      badge: "Sans garde · Trustless · Propulsé par IA",
+      title1: "La façon la plus simple",
+      title2: "de lancer",
+      title3: "sur Solana.",
+      desc: "Créez des tokens SPL professionnels en 60 secondes. Utilisez les tendances Solana et l'AI Meme Generator pour trouver le bon narratif avant de lancer.",
+      create: "Créer votre token",
+      how: "Comment ça marche",
+      ai: "Générer une idée IA",
+      note: "Pas d'inscription. Connectez votre wallet, trouvez une tendance et lancez.",
+    },
+    stats: {
+      create: "Pour créer un token",
+      secure: "On-chain et sans garde",
+    },
+    aiSection: {
+      badge: "Trending + AI Meme",
+      title1: "Ne lancez pas au hasard.",
+      title2: "Lancez avec le bon narratif.",
+      desc: "SolMint vous aide à découvrir les tendances, générer des idées memecoin et passer du concept au token live en quelques minutes.",
+    },
+    pricing: {
+      badge: "Tarifs",
+      title1: "Transparents.",
+      title2: "Définitifs.",
+      desc: "Vous payez une fois. Pas d'abonnement. Pas de surprise.",
+      button: "Commencer maintenant",
+    },
+    faq: { badge: "FAQ", title: "Des questions?" },
+    cta: {
+      title1: "Prêt",
+      title2: "à lancer?",
+      desc: "Trouvez une tendance, générez une idée meme avec l'IA et créez votre token en moins de 60 secondes.",
+      button: "Créer votre token",
+    },
+    footer: {
+      desc: "Créez des tokens SPL, préparez des lancements avec des outils IA et gérez la liquidité sans garde sur Solana.",
+      rights: "Tous droits réservés.",
+      built: "Construit sur Solana.",
+    },
+  },
+
+  PT: {
+    nav: {
+      features: "Recursos",
+      how: "Como funciona",
+      pricing: "Preços",
+      faq: "FAQ",
+      trending: "Trending",
+      guides: "Guias",
+      ai: "AI Meme",
+      launch: "Lançar App",
+    },
+    hero: {
+      badge: "Sem custódia · Trustless · Com IA",
+      title1: "A forma mais fácil",
+      title2: "de lançar",
+      title3: "na Solana.",
+      desc: "Crie tokens SPL profissionais em 60 segundos. Use tendências Solana e o AI Meme Generator para encontrar a narrativa certa antes de lançar.",
+      create: "Criar seu token",
+      how: "Como funciona",
+      ai: "Gerar ideia IA",
+      note: "Sem cadastro. Conecte sua carteira, encontre uma tendência e comece.",
+    },
+    stats: {
+      create: "Para criar um token",
+      secure: "On-chain e sem custódia",
+    },
+    aiSection: {
+      badge: "Trending + AI Meme",
+      title1: "Não lance ao acaso.",
+      title2: "Lance com a narrativa certa.",
+      desc: "SolMint ajuda você a descobrir tendências, gerar ideias memecoin e passar do conceito ao token live em minutos.",
+    },
+    pricing: {
+      badge: "Preços",
+      title1: "Transparentes.",
+      title2: "Definitivos.",
+      desc: "Você paga uma vez. Sem assinatura. Sem surpresas.",
+      button: "Começar agora",
+    },
+    faq: { badge: "FAQ", title: "Tem perguntas?" },
+    cta: {
+      title1: "Pronto",
+      title2: "para lançar?",
+      desc: "Encontre uma tendência, gere uma ideia meme com IA e crie seu token em menos de 60 segundos.",
+      button: "Criar seu token",
+    },
+    footer: {
+      desc: "Crie tokens SPL, prepare lançamentos com ferramentas de IA e gerencie liquidez sem custódia na Solana.",
+      rights: "Todos os direitos reservados.",
+      built: "Construído na Solana.",
+    },
+  },
+
+  DE: {
+    nav: {
+      features: "Features",
+      how: "So funktioniert es",
+      pricing: "Preise",
+      faq: "FAQ",
+      trending: "Trending",
+      guides: "Guides",
+      ai: "AI Meme",
+      launch: "App starten",
+    },
+    hero: {
+      badge: "Trustless · Nicht-verwahrend · KI-gestützt",
+      title1: "Der einfachste Weg",
+      title2: "zum Launch",
+      title3: "auf Solana.",
+      desc: "Erstelle professionelle SPL-Token in 60 Sekunden. Nutze Solana-Trends und den AI Meme Generator, um die richtige Narrative vor dem Launch zu finden.",
+      create: "Token erstellen",
+      how: "So funktioniert es",
+      ai: "KI-Idee generieren",
+      note: "Keine Registrierung. Wallet verbinden, Trend finden und starten.",
+    },
+    stats: {
+      create: "Zum Erstellen eines Tokens",
+      secure: "On-chain & nicht-verwahrend",
+    },
+    aiSection: {
+      badge: "Trending + AI Meme",
+      title1: "Nicht zufällig launchen.",
+      title2: "Mit der richtigen Narrative launchen.",
+      desc: "SolMint hilft dir, Trends zu entdecken, Memecoin-Ideen zu generieren und in Minuten vom Konzept zum Live-Token zu gelangen.",
+    },
+    pricing: {
+      badge: "Preise",
+      title1: "Transparent.",
+      title2: "Endgültig.",
+      desc: "Einmalig bezahlen. Kein Abonnement. Keine versteckten Kosten.",
+      button: "Jetzt starten",
+    },
+    faq: { badge: "FAQ", title: "Fragen?" },
+    cta: {
+      title1: "Bereit",
+      title2: "zum Launch?",
+      desc: "Finde einen Trend, generiere eine KI-Meme-Idee und erstelle deinen Token in unter 60 Sekunden.",
+      button: "Token erstellen",
+    },
+    footer: {
+      desc: "Erstelle SPL-Token, bereite Launches mit KI-Tools vor und verwalte Liquidität nicht-verwahrend auf Solana.",
+      rights: "Alle Rechte vorbehalten.",
+      built: "Gebaut auf Solana.",
+    },
+  },
 } as const;
+
+export type Lang = keyof typeof TEXTS;

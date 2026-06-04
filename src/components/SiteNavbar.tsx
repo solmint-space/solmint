@@ -2,56 +2,36 @@
 
 import { useEffect, useState } from "react";
 
-type Lang = "IT" | "EN";
-type NavLink = [string, string];
+type Lang = "IT" | "EN" | "ES" | "FR" | "PT" | "DE";
 
-const NAV_LINKS: Record<Lang, NavLink[]> = {
-  IT: [
-    ["Features", "/#features"],
-    ["Come funziona", "/#come-funziona"],
-    ["Prezzi", "/#prezzi"],
-    ["FAQ", "/#faq"],
-    ["Trending", "/trending"],
-    ["Guide", "/guides"],
-    ["AI Meme", "/ai-meme"],
-  ],
-  EN: [
-    ["Features", "/#features"],
-    ["How it works", "/#come-funziona"],
-    ["Pricing", "/#prezzi"],
-    ["FAQ", "/#faq"],
-    ["Trending", "/trending"],
-    ["Guides", "/guides"],
-    ["AI Meme", "/ai-meme"],
-  ],
+const NAV: Record<Lang, [string, string][]> = {
+  IT:  [["Features","/#features"],["Come funziona","/#come-funziona"],["Prezzi","/#prezzi"],["Trending","/trending"],["Guide","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
+  EN:  [["Features","/#features"],["How it works","/#come-funziona"],["Pricing","/#prezzi"],["Trending","/trending"],["Guides","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
+  ES:  [["Características","/#features"],["Cómo funciona","/#come-funziona"],["Precios","/#prezzi"],["Trending","/trending"],["Guías","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
+  FR:  [["Fonctionnalités","/#features"],["Comment ça marche","/#come-funziona"],["Tarifs","/#prezzi"],["Tendances","/trending"],["Guides","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
+  PT:  [["Recursos","/#features"],["Como funciona","/#come-funziona"],["Preços","/#prezzi"],["Trending","/trending"],["Guias","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
+  DE:  [["Features","/#features"],["So funktioniert es","/#come-funziona"],["Preise","/#prezzi"],["Trending","/trending"],["Guides","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
 };
 
-const TEXT = {
-  IT: {
-    brandSub: "Solana Token Launcher",
-    launchApp: "Lancia App",
-  },
-  EN: {
-    brandSub: "Solana Token Launcher",
-    launchApp: "Launch App",
-  },
+const LAUNCH: Record<Lang, string> = {
+  IT: "Lancia App", EN: "Launch App", ES: "Lanzar App",
+  FR: "Lancer l'App", PT: "Lançar App", DE: "App starten",
+};
+
+const LANG_LABELS: Record<Lang, string> = {
+  IT: "🇮🇹 IT", EN: "🇬🇧 EN", ES: "🇪🇸 ES",
+  FR: "🇫🇷 FR", PT: "🇧🇷 PT", DE: "🇩🇪 DE",
 };
 
 function Logo({ size = 34 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="9" fill="url(#siteNavLogo)" />
+      <rect width="32" height="32" rx="9" fill="url(#snl)" />
       <circle cx="16" cy="16" r="6" stroke="white" strokeWidth="2" fill="none" />
-      <path
-        d="M16 10V8M16 24v-2M10 16H8M24 16h-2"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+      <path d="M16 10V8M16 24v-2M10 16H8M24 16h-2" stroke="white" strokeWidth="2" strokeLinecap="round" />
       <defs>
-        <linearGradient id="siteNavLogo" x1="0" y1="0" x2="32" y2="32">
-          <stop stopColor="#9945FF" />
-          <stop offset="1" stopColor="#14F195" />
+        <linearGradient id="snl" x1="0" y1="0" x2="32" y2="32">
+          <stop stopColor="#9945FF" /><stop offset="1" stopColor="#14F195" />
         </linearGradient>
       </defs>
     </svg>
@@ -60,176 +40,129 @@ function Logo({ size = 34 }: { size?: number }) {
 
 export default function SiteNavbar() {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [lang, setLang] = useState<Lang>("IT");
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [lang, setLang] = useState<Lang>("EN");
 
-  const t = TEXT[lang];
-  const navLinks = NAV_LINKS[lang];
+  useEffect(() => {
+    const stored = localStorage.getItem("solmint-lang") as Lang | null;
+    if (stored && stored in LANG_LABELS) { setLang(stored); }
+    else {
+      const browser = navigator.language.slice(0, 2).toUpperCase();
+      if (browser === "IT") setLang("IT");
+      else if (browser === "ES") setLang("ES");
+      else if (browser === "FR") setLang("FR");
+      else if (browser === "PT") setLang("PT");
+      else if (browser === "DE") setLang("DE");
+      else setLang("EN");
+    }
+    const handler = (e: any) => setLang(e.detail as Lang);
+    window.addEventListener("solmint-lang", handler);
+    return () => window.removeEventListener("solmint-lang", handler);
+  }, []);
+
+  function changeLang(l: Lang) {
+    setLang(l);
+    localStorage.setItem("solmint-lang", l);
+  }
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
     fn();
-
     window.addEventListener("scroll", fn);
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
+  const navLinks = NAV[lang];
+  const launchLabel = LAUNCH[lang];
+
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-4 transition-all duration-300"
+      className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-3 transition-all duration-300"
       style={{
-        background: scrolled || mobileMenuOpen ? "rgba(7,7,15,0.82)" : "transparent",
-        backdropFilter: scrolled || mobileMenuOpen ? "blur(26px)" : "none",
-        WebkitBackdropFilter: scrolled || mobileMenuOpen ? "blur(26px)" : "none",
-        borderBottom:
-          scrolled || mobileMenuOpen
-            ? "1px solid rgba(255,255,255,0.08)"
-            : "1px solid transparent",
+        background: scrolled || mobileOpen ? "rgba(5,5,14,0.88)" : "transparent",
+        backdropFilter: scrolled || mobileOpen ? "blur(28px)" : "none",
+        borderBottom: scrolled || mobileOpen ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
       }}
     >
-      <div
-        className="max-w-6xl mx-auto flex items-center justify-between gap-3 rounded-2xl lg:rounded-full transition-all duration-300"
-        style={{
-          padding: scrolled || mobileMenuOpen ? "10px 12px" : "0px",
-          background: scrolled || mobileMenuOpen ? "rgba(255,255,255,0.035)" : "transparent",
-          border:
-            scrolled || mobileMenuOpen
-              ? "1px solid rgba(255,255,255,0.07)"
-              : "1px solid transparent",
-        }}
-      >
-        <a href="/" className="flex items-center gap-3 min-w-0">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+        {/* Logo */}
+        <a href="/" className="flex items-center gap-3 flex-shrink-0">
           <Logo size={34} />
-          <div className="leading-tight min-w-0">
-            <span className="block font-black text-lg sm:text-xl tracking-tight truncate text-white">
-              SolMint Space
-            </span>
-            <span
-              className="hidden sm:block text-[10px] font-bold uppercase tracking-[0.22em]"
-              style={{ color: "rgba(255,255,255,0.28)" }}
-            >
-              {t.brandSub}
+          <div className="leading-tight">
+            <span className="block font-black text-lg tracking-tight text-white">SolMint Space</span>
+            <span className="hidden sm:block text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: "rgba(255,255,255,0.28)" }}>
+              Solana Token Launcher
             </span>
           </div>
         </a>
 
-        <div
-          className="hidden lg:flex items-center gap-1 px-2 py-2 rounded-full"
-          style={{
-            background: "rgba(255,255,255,0.035)",
-            border: "1px solid rgba(255,255,255,0.07)",
-          }}
-        >
+        {/* Desktop nav */}
+        <div className="hidden lg:flex items-center gap-1 px-2 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
           {navLinks.map(([label, href]) => (
             <a
               key={label}
               href={href}
-              className="px-3 py-2 rounded-full text-sm font-semibold transition-all"
+              className="px-3 py-2 rounded-full text-xs font-bold transition-all"
               style={{ color: "rgba(255,255,255,0.52)" }}
-              onMouseEnter={e => {
-                e.currentTarget.style.color = "white";
-                e.currentTarget.style.background = "rgba(255,255,255,0.07)";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.color = "rgba(255,255,255,0.52)";
-                e.currentTarget.style.background = "transparent";
-              }}
+              onMouseEnter={e => { e.currentTarget.style.color = "white"; e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.52)"; e.currentTarget.style.background = "transparent"; }}
             >
               {label}
             </a>
           ))}
         </div>
 
-        <div className="hidden lg:flex items-center gap-3">
-          <button
-            onClick={() => setLang(lang === "IT" ? "EN" : "IT")}
-            className="flex items-center gap-1 p-1 rounded-full text-xs font-black"
-            style={{
-              background: "rgba(255,255,255,0.055)",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
+        {/* Desktop right */}
+        <div className="hidden lg:flex items-center gap-2">
+          <select
+            value={lang}
+            onChange={e => changeLang(e.target.value as Lang)}
+            className="text-xs font-black rounded-full px-3 py-2 appearance-none cursor-pointer"
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "white", outline: "none" }}
           >
-            {(["IT", "EN"] as Lang[]).map(code => (
-              <span
-                key={code}
-                className="px-3 py-1.5 rounded-full transition-all"
-                style={{
-                  color: lang === code ? "white" : "rgba(255,255,255,0.35)",
-                  background:
-                    lang === code
-                      ? "linear-gradient(135deg, #9945FF, #14F195)"
-                      : "transparent",
-                }}
-              >
-                {code}
-              </span>
+            {(Object.keys(LANG_LABELS) as Lang[]).map(code => (
+              <option key={code} value={code} style={{ background: "#0a0a14", color: "white" }}>
+                {LANG_LABELS[code]}
+              </option>
             ))}
-          </button>
+          </select>
 
           <a
             href="/?app=true"
             className="px-5 py-2.5 rounded-full text-sm font-black text-white transition-all hover:opacity-90 hover:scale-105"
-            style={{
-              background: "linear-gradient(135deg, #9945FF, #14F195)",
-              boxShadow: "0 12px 35px rgba(153,69,255,0.26)",
-            }}
+            style={{ background: "linear-gradient(135deg,#9945FF,#14F195)", boxShadow: "0 10px 30px rgba(153,69,255,0.3)" }}
           >
-            {t.launchApp}
+            {launchLabel}
           </a>
         </div>
 
+        {/* Mobile hamburger */}
         <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="lg:hidden w-11 h-11 rounded-2xl flex items-center justify-center transition-all"
-          style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-          aria-label="Apri menu"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+          aria-label="Menu"
         >
           <span className="relative w-5 h-4 block">
-            <span
-              className="absolute left-0 top-0 w-5 h-0.5 bg-white transition-all duration-300"
-              style={{
-                transform: mobileMenuOpen ? "translateY(7px) rotate(45deg)" : "none",
-              }}
-            />
-            <span
-              className="absolute left-0 top-2 w-5 h-0.5 bg-white transition-all duration-300"
-              style={{ opacity: mobileMenuOpen ? 0 : 1 }}
-            />
-            <span
-              className="absolute left-0 bottom-0 w-5 h-0.5 bg-white transition-all duration-300"
-              style={{
-                transform: mobileMenuOpen ? "translateY(-7px) rotate(-45deg)" : "none",
-              }}
-            />
+            <span className="absolute left-0 top-0 w-5 h-0.5 bg-white transition-all duration-300" style={{ transform: mobileOpen ? "translateY(7px) rotate(45deg)" : "none" }} />
+            <span className="absolute left-0 top-2 w-5 h-0.5 bg-white transition-all duration-300" style={{ opacity: mobileOpen ? 0 : 1 }} />
+            <span className="absolute left-0 bottom-0 w-5 h-0.5 bg-white transition-all duration-300" style={{ transform: mobileOpen ? "translateY(-7px) rotate(-45deg)" : "none" }} />
           </span>
         </button>
       </div>
 
-      {mobileMenuOpen && (
-        <div className="lg:hidden max-w-6xl mx-auto pt-4">
-          <div
-            className="rounded-[28px] p-4"
-            style={{
-              background: "rgba(10,10,22,0.96)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow: "0 28px 90px rgba(0,0,0,0.55)",
-            }}
-          >
-            <div className="grid gap-2">
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="lg:hidden max-w-7xl mx-auto pt-3">
+          <div className="rounded-[24px] p-4" style={{ background: "rgba(8,8,20,0.97)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 28px 90px rgba(0,0,0,0.6)" }}>
+            <div className="grid gap-2 mb-4">
               {navLinks.map(([label, href]) => (
                 <a
                   key={label}
                   href={href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-4 py-3.5 rounded-2xl text-base font-bold transition-all"
-                  style={{
-                    color: "rgba(255,255,255,0.84)",
-                    background: "rgba(255,255,255,0.035)",
-                    border: "1px solid rgba(255,255,255,0.055)",
-                  }}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-bold"
+                  style={{ color: "rgba(255,255,255,0.82)", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
                 >
                   {label}
                   <span style={{ color: "rgba(255,255,255,0.24)" }}>→</span>
@@ -237,44 +170,27 @@ export default function SiteNavbar() {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <button
-                onClick={() => setLang(lang === "IT" ? "EN" : "IT")}
-                className="rounded-2xl p-1 text-xs font-black"
-                style={{
-                  background: "rgba(255,255,255,0.055)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                }}
+            <div className="grid grid-cols-2 gap-3">
+              <select
+                value={lang}
+                onChange={e => { changeLang(e.target.value as Lang); setMobileOpen(false); }}
+                className="rounded-xl py-3 px-4 text-sm font-black appearance-none"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "white", outline: "none" }}
               >
-                <span className="grid grid-cols-2 gap-1">
-                  {(["IT", "EN"] as Lang[]).map(code => (
-                    <span
-                      key={code}
-                      className="py-2 rounded-xl"
-                      style={{
-                        color: lang === code ? "white" : "rgba(255,255,255,0.35)",
-                        background:
-                          lang === code
-                            ? "linear-gradient(135deg, #9945FF, #14F195)"
-                            : "transparent",
-                      }}
-                    >
-                      {code}
-                    </span>
-                  ))}
-                </span>
-              </button>
+                {(Object.keys(LANG_LABELS) as Lang[]).map(code => (
+                  <option key={code} value={code} style={{ background: "#0a0a14", color: "white" }}>
+                    {LANG_LABELS[code]}
+                  </option>
+                ))}
+              </select>
 
               <a
                 href="/?app=true"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-center py-3 rounded-2xl text-sm font-black text-white"
-                style={{
-                  background: "linear-gradient(135deg, #9945FF, #14F195)",
-                  boxShadow: "0 18px 45px rgba(153,69,255,0.26)",
-                }}
+                onClick={() => setMobileOpen(false)}
+                className="text-center py-3 rounded-xl text-sm font-black text-white"
+                style={{ background: "linear-gradient(135deg,#9945FF,#14F195)" }}
               >
-                {t.launchApp}
+                {launchLabel}
               </a>
             </div>
           </div>
