@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { LiveStats, LiveBuys } from "@/components/site/LiveDexPanel";
+import { LiveStats, LiveBuys, BuyPressure } from "@/components/site/LiveDexPanel";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -93,10 +93,11 @@ export default async function GeneratedSitePage({ params }: PageProps) {
     pairAddress = await getPairAddress(data.mint);
   }
 
+  // embed=1 + trades=0 + info=0 → mostra solo il grafico prezzo
   const chartSrc = pairAddress
-    ? `https://dexscreener.com/solana/${pairAddress}?embed=1&theme=dark`
+    ? `https://dexscreener.com/solana/${pairAddress}?embed=1&theme=dark&trades=0&info=0`
     : data.mint
-    ? `https://dexscreener.com/solana/${data.mint}?embed=1&theme=dark`
+    ? `https://dexscreener.com/solana/${data.mint}?embed=1&theme=dark&trades=0&info=0`
     : null;
 
   const socialLinks = [
@@ -253,21 +254,30 @@ export default async function GeneratedSitePage({ params }: PageProps) {
             </div>
           </div>
 
-          {data.logo_url && (
-            <img
-              src={data.logo_url}
-              alt=""
-              className="absolute -left-8 top-12 w-40 h-40 sm:w-52 sm:h-52 rounded-[42px] object-cover ring-4 ring-white/20 shadow-2xl"
-              style={{ animation: "floatA 4.5s ease-in-out infinite" }}
-            />
-          )}
+          {/* Logo floating — mostra sempre (logo o gradiente con iniziale) */}
+          <div
+            className="absolute -left-8 top-12 w-40 h-40 sm:w-52 sm:h-52 rounded-[42px] ring-4 ring-white/20 shadow-2xl overflow-hidden"
+            style={{ animation: "floatA 4.5s ease-in-out infinite", flexShrink: 0 }}
+          >
+            {data.logo_url ? (
+              <img src={data.logo_url} alt={data.token_name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full grid place-items-center text-6xl font-black" style={{ background: `linear-gradient(135deg,${primary},${accent})` }}>
+                {data.symbol?.[0] || "?"}
+              </div>
+            )}
+          </div>
 
+          {/* Buy Pressure — dati reali */}
           <div className="absolute -right-5 top-20 glass rounded-[28px] p-5 w-52" style={{ animation: "floatB 5s ease-in-out infinite" }}>
-            <div className="text-xs font-black uppercase text-white/45">Buy Pressure</div>
-            <div className="text-4xl font-black" style={{ color: primary }}>92%</div>
-            <div className="h-2 rounded-full bg-white/10 mt-3 overflow-hidden">
-              <div className="h-full rounded-full" style={{ width: "92%", background: `linear-gradient(90deg,${primary},${accent})` }} />
-            </div>
+            {data.mint ? (
+              <BuyPressure mint={data.mint} primary={primary} accent={accent} />
+            ) : (
+              <>
+                <div className="text-xs font-black uppercase text-white/45">Buy Pressure</div>
+                <div className="text-4xl font-black" style={{ color: primary }}>—</div>
+              </>
+            )}
           </div>
 
           <div className="absolute left-6 bottom-24 glass rounded-[24px] p-4 w-48">
