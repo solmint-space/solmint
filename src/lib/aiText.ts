@@ -30,15 +30,24 @@ const groqKeys = [
 ].filter(Boolean) as string[];
 
 export async function generateSiteAI(input: SiteAIInput) {
-  const dexContext = input.dexData
-    ? `\nLive DexScreener data:\n- Price: ${input.dexData.price || "TBA"}\n- 24h change: ${input.dexData.priceChange24h != null ? input.dexData.priceChange24h + "%" : "N/A"}\n- Volume 24h: ${input.dexData.volume24h || "N/A"}\n- Market Cap: ${input.dexData.marketCap || "N/A"}\n- Liquidity: ${input.dexData.liquidity || "N/A"}`
-    : "";
+  const hasDex = !!input.dexData;
+  const dexContext = hasDex
+    ? `\n\n🔴 LIVE DEXSCREENER DATA (use these EXACT real numbers in the website):\n- Price: ${input.dexData!.price || "TBA"}\n- 24h Change: ${input.dexData!.priceChange24h != null ? input.dexData!.priceChange24h + "%" : "N/A"}\n- 24h Volume: ${input.dexData!.volume24h || "N/A"}\n- Market Cap / FDV: ${input.dexData!.marketCap || "N/A"}\n- Liquidity: ${input.dexData!.liquidity || "N/A"}\n- Twitter: ${input.dexData!.twitter || "N/A"}\n- Telegram: ${input.dexData!.telegram || "N/A"}\n- Website: ${input.dexData!.website || "N/A"}`
+    : "\n\n⚠️ No DexScreener data available. Create engaging placeholder stats.";
 
-  const prompt = `You are a viral memecoin website copywriter. Create a complete, hype-driven website JSON for this Solana token.
+  const prompt = `You are the world's best viral memecoin website copywriter. Create a complete, hype-driven website JSON for this Solana token. Make it sound REAL, EXCITING and MEME-NATIVE. Use the real DexScreener data where provided.
 
 Token Name: ${input.tokenName}
 Symbol: $${input.symbol}
 Description: ${input.description}${dexContext}
+
+IMPORTANT RULES:
+- Use the REAL price/volume/marketcap numbers from DexScreener in liveStats
+- Make the hero copy sound like the token is already mooning
+- The about text should feel like cult/community lore
+- Roadmap phases should be creative and meme-relevant
+- howToBuy steps should mention Jupiter swap and Phantom wallet
+- Make tokenomics realistic for a Solana memecoin
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
@@ -65,10 +74,10 @@ Return ONLY valid JSON (no markdown, no explanation):
     "text": "2 sentences about the community energy"
   },
   "liveStats": [
-    { "label": "Holders", "value": "${input.dexData?.holders || "Growing"}", "change": "Join now" },
-    { "label": "Market Cap", "value": "${input.dexData?.marketCap || "Loading"}", "change": "Dex live" },
-    { "label": "24H Volume", "value": "${input.dexData?.volume24h || "Live soon"}", "change": "Bullish" },
-    { "label": "Liquidity", "value": "${input.dexData?.liquidity || "Locked"}", "change": "Secured" }
+    { "label": "Price", "value": "${input.dexData?.price || "TBA"}", "change": "${input.dexData?.priceChange24h != null ? (input.dexData.priceChange24h > 0 ? "▲ " : "▼ ") + Math.abs(input.dexData.priceChange24h) + "% 24h" : "Launching soon"}" },
+    { "label": "Market Cap", "value": "${input.dexData?.marketCap || "TBA"}", "change": "FDV on Dex" },
+    { "label": "24H Volume", "value": "${input.dexData?.volume24h || "TBA"}", "change": "${input.dexData?.volume24h ? "Bullish 🔥" : "Coming soon"}" },
+    { "label": "Liquidity", "value": "${input.dexData?.liquidity || "TBA"}", "change": "LP secured" }
   ],
   "liveBuys": [
     { "name": "random crypto username", "amount": "X.XX SOL" },

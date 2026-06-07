@@ -1,8 +1,13 @@
+"use client";
+
+import SiteNavbar from "@/components/SiteNavbar";
+import SiteFooter from "@/components/SiteFooter";
+
 export default function Privacy() {
   return (
-    <main className="min-h-screen text-white px-6 py-24" style={{ background: "transparent" }}>
-      <div className="max-w-3xl mx-auto">
-        <a href="/" className="text-sm text-purple-400 mb-8 block">Torna alla home</a>
+    <main className="min-h-screen text-white">
+      <SiteNavbar />
+      <div className="max-w-3xl mx-auto px-6 pt-28 pb-20">
         <h1 className="text-4xl font-bold mb-2">Privacy Policy</h1>
         <p className="text-gray-500 text-sm mb-12">Ultimo aggiornamento: Aprile 2026</p>
 
@@ -33,19 +38,7 @@ export default function Privacy() {
           </section>
         </div>
       </div>
-      <footer className="border-t py-8 px-6" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-  <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-    <div className="flex items-center gap-3">
-      <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ background: "linear-gradient(135deg, #9945FF, #14F195)" }}>S</div>
-      <span className="text-sm text-gray-500">SolMint — Powered by Solana and Metaplex</span>
-    </div>
-    <div className="flex items-center gap-6">
-      <a href="/privacy" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Privacy Policy</a>
-      <a href="/terms" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">Termini e Condizioni</a>
-      <span className="text-xs text-gray-600">100% non-custodial</span>
-    </div>
-  </div>
-</footer>
+      <SiteFooter />
     </main>
   );
 }

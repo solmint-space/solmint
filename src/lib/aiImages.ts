@@ -86,11 +86,11 @@ export async function generateSiteImages(input: ImageInput) {
 
   const heroPrompt =
     input.heroPrompt ||
-    `${baseStyle}, mascot character for crypto token called ${input.tokenName}, centered composition, wide hero banner, dramatic lighting, no text, no watermark, ultra high quality`;
+    `${baseStyle}, iconic mascot character representing "${input.tokenName}" crypto token ($${input.symbol}), centered composition, full-bleed hero banner, dramatic cinematic lighting, ultra detailed, hyper-realistic rendering, no text, no letters, no watermark, 4K quality`;
 
   const communityPrompt =
     input.communityPrompt ||
-    `${baseStyle}, community artwork for ${input.tokenName} crypto token, group of cartoon characters celebrating, rocket to moon vibes, no text, no watermark, vibrant colors`;
+    `${baseStyle}, vibrant community celebration artwork for "${input.tokenName}" ($${input.symbol}) crypto token, group of diverse cartoon characters with rocket ships and moon, explosive energy, confetti and neon glows, no text, no letters, no watermark, vibrant high-contrast colors`;
 
   const [heroUrl, communityUrl] = await Promise.all([
     generateAndUpload(heroPrompt, `${input.symbol.toLowerCase()}-hero.png`),
