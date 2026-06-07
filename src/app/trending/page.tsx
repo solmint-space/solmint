@@ -360,6 +360,7 @@ export default function TrendingPage() {
   const [aiError, setAiError] = useState("");
   const [aiResult, setAiResult] = useState<any | null>(null);
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [newToast, setNewToast] = useState<{ name: string; symbol: string; icon: string | null } | null>(null);
 
   const fetchTokens = useCallback(async () => {
     try {
@@ -369,10 +370,19 @@ export default function TrendingPage() {
 
       setTokens(prev => {
         const prevAddresses = new Set(prev.map((t: Token) => t.address));
-        return newTokens.map((t: Token) => ({
+        const mapped = newTokens.map((t: Token) => ({
           ...t,
           isNew: prevAddresses.size > 0 && !prevAddresses.has(t.address),
         }));
+        // Mostra toast per il primo token nuovo trovato
+        if (prevAddresses.size > 0) {
+          const firstNew = mapped.find(t => t.isNew);
+          if (firstNew) {
+            setNewToast({ name: firstNew.name, symbol: firstNew.symbol, icon: firstNew.icon });
+            setTimeout(() => setNewToast(null), 4000);
+          }
+        }
+        return mapped;
       });
 
       setLastUpdate(new Date());
@@ -388,7 +398,7 @@ export default function TrendingPage() {
 
   useEffect(() => {
     if (!autoRefresh) return;
-    const interval = setInterval(fetchTokens, 5000);
+    const interval = setInterval(fetchTokens, 4000);
     return () => clearInterval(interval);
   }, [autoRefresh, fetchTokens]);
 
@@ -450,92 +460,99 @@ export default function TrendingPage() {
     <main className="min-h-screen overflow-x-hidden" style={{ background: "#07070f", color: "white" }}>
       <SiteNavbar />
 
+      {/* Pump.fun-style toast per nuovi token */}
+      {newToast && (
+        <div
+          className="new-token-toast fixed bottom-6 right-5 z-[999] flex items-center gap-3 rounded-[22px] px-5 py-4 pointer-events-none"
+          style={{
+            background: "rgba(8,8,20,0.95)",
+            border: "1px solid rgba(20,241,149,0.55)",
+            boxShadow: "0 0 50px rgba(20,241,149,0.25), 0 24px 70px rgba(0,0,0,0.6)",
+            backdropFilter: "blur(22px)",
+            minWidth: 220,
+          }}
+        >
+          <div className="relative h-10 w-10 shrink-0">
+            {newToast.icon ? (
+              <img src={newToast.icon} alt="" className="h-10 w-10 rounded-full object-cover" />
+            ) : (
+              <div className="h-10 w-10 rounded-full grid place-items-center font-black text-sm" style={{ background: "linear-gradient(135deg,#9945FF,#14F195)" }}>
+                {newToast.symbol?.[0] || "?"}
+              </div>
+            )}
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full grid place-items-center" style={{ background: "#14F195" }}>
+              <span className="text-black font-black" style={{ fontSize: 8 }}>✦</span>
+            </span>
+          </div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest mb-0.5" style={{ color: "#14F195" }}>New Token</div>
+            <div className="font-black text-white text-sm leading-tight">{newToast.name}</div>
+            <div className="text-xs font-bold" style={{ color: "rgba(255,255,255,0.4)" }}>${newToast.symbol}</div>
+          </div>
+        </div>
+      )}
+
       <style jsx global>{`
   @keyframes scanLine {
-    0% {
-      transform: translateX(-120%);
-      opacity: 0;
-    }
-
-    30% {
-      opacity: 1;
-    }
-
-    100% {
-      transform: translateX(120%);
-      opacity: 0;
-    }
+    0%   { transform: translateX(-120%); opacity: 0; }
+    20%  { opacity: 1; }
+    100% { transform: translateX(120%);  opacity: 0; }
   }
 
-  @keyframes tokenPop {
-    0% {
-      opacity: 0;
-      transform: translateY(40px) scale(0.92);
-      filter: blur(10px);
-    }
-
-    40% {
-      opacity: 1;
-      transform: translateY(-6px) scale(1.02);
-      filter: blur(0px);
-    }
-
-    60% {
-      transform: translateY(2px) scale(0.995);
-    }
-
-    100% {
-      opacity: 1;
-      transform: translateY(0px) scale(1);
-      filter: blur(0px);
-    }
+  /* Pump.fun-style: sfreccia dall'alto con rimbalzo */
+  @keyframes pumpPop {
+    0%   { opacity: 0; transform: translateY(-60px) scaleY(0.7) scaleX(1.06); filter: blur(8px) brightness(2.2); }
+    35%  { opacity: 1; transform: translateY(10px)  scaleY(1.04) scaleX(0.97); filter: blur(0) brightness(1.5); }
+    55%  { transform: translateY(-4px) scale(1.01); filter: brightness(1.2); }
+    72%  { transform: translateY(2px)  scale(0.998); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: none; }
   }
 
-  @keyframes newGlow {
-    0% {
-      box-shadow:
-        0 0 0 rgba(20,241,149,0),
-        0 0 0 rgba(153,69,255,0);
-    }
+  @keyframes pumpGlow {
+    0%   { box-shadow: 0 0 0 rgba(20,241,149,0), 0 0 0 rgba(153,69,255,0); }
+    25%  { box-shadow: 0 0 60px rgba(20,241,149,0.55), 0 0 120px rgba(153,69,255,0.4); }
+    60%  { box-shadow: 0 0 30px rgba(20,241,149,0.25), 0 0 60px rgba(153,69,255,0.18); }
+    100% { box-shadow: 0 0 0 rgba(20,241,149,0), 0 0 0 rgba(153,69,255,0); }
+  }
 
-    50% {
-      box-shadow:
-        0 0 40px rgba(20,241,149,0.28),
-        0 0 80px rgba(153,69,255,0.22);
-    }
+  @keyframes flashBorder {
+    0%,100% { border-color: rgba(20,241,149,0.45); }
+    40%      { border-color: rgba(20,241,149,1); box-shadow: 0 0 0 2px rgba(20,241,149,0.35); }
+  }
 
-    100% {
-      box-shadow:
-        0 0 0 rgba(20,241,149,0),
-        0 0 0 rgba(153,69,255,0);
-    }
+  @keyframes badgeBounce {
+    0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
+    55%  { transform: scale(1.18) rotate(4deg); opacity: 1; }
+    75%  { transform: scale(0.92) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
   }
 
   @keyframes badgePulse {
-    0% {
-      transform: scale(0.95);
-      opacity: 0.7;
-    }
-
-    50% {
-      transform: scale(1.08);
-      opacity: 1;
-    }
-
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
+    0%,100% { transform: scale(1);    opacity: 1; }
+    50%     { transform: scale(1.12); opacity: 0.85; }
   }
 
   .token-new {
     animation:
-      tokenPop 0.8s cubic-bezier(.22,1,.36,1),
-      newGlow 2.5s ease-in-out;
+      pumpPop  0.65s cubic-bezier(.22,1,.36,1) forwards,
+      pumpGlow 2.8s ease-in-out,
+      flashBorder 1.6s ease-in-out 2;
   }
 
   .token-new-badge {
-    animation: badgePulse 1s ease-in-out infinite;
+    animation: badgeBounce 0.55s cubic-bezier(.22,1,.36,1) forwards, badgePulse 1.4s ease-in-out 0.55s infinite;
+  }
+
+  @keyframes toastSlide {
+    0%   { transform: translateX(120%); opacity: 0; }
+    18%  { transform: translateX(-6%);  opacity: 1; }
+    26%  { transform: translateX(3%); }
+    34%  { transform: translateX(0); }
+    72%  { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(120%); opacity: 0; }
+  }
+  .new-token-toast {
+    animation: toastSlide 3.8s cubic-bezier(.22,1,.36,1) forwards;
   }
 `}</style>
 

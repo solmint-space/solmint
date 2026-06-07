@@ -6,15 +6,109 @@ import PremiumBackground from "@/components/PremiumBackground";
 import SiteNavbar from "@/components/SiteNavbar";
 import SiteFooter from "@/components/SiteFooter";
 import { GUIDES, type Guide } from "@/data/guides";
+import { useLang } from "@/lib/useLang";
 
-
-
-const CATEGORIES = ["Tutti", "Basics", "Tutorial", "Sicurezza", "Marketing", "Strategia", "Educazione"];
+const GT = {
+  IT: {
+    badge: "Solana Guides",
+    heading: "Impara tutto su",
+    headingAccent: " Solana",
+    desc: "Guide pratiche per creare token SPL, gestire authority, preparare liquidità, leggere i trend e lanciare in modo più sicuro e professionale.",
+    searchPlaceholder: "Cerca una guida...",
+    allCat: "Tutti",
+    notFound: "Nessuna guida trovata.",
+    readTime: "di lettura",
+    read: "Leggi →",
+    back: "← Torna alle guide",
+    ready: "Pronto a creare il tuo token?",
+    readyDesc: "Metti in pratica quello che hai imparato. Crea il token, cura i metadata e prepara il lancio.",
+    readyBtn: "Lancia il tuo token",
+  },
+  EN: {
+    badge: "Solana Guides",
+    heading: "Learn everything about",
+    headingAccent: " Solana",
+    desc: "Practical guides to create SPL tokens, manage authorities, prepare liquidity, read trends and launch more safely and professionally.",
+    searchPlaceholder: "Search a guide...",
+    allCat: "All",
+    notFound: "No guides found.",
+    readTime: "read",
+    read: "Read →",
+    back: "← Back to guides",
+    ready: "Ready to create your token?",
+    readyDesc: "Put what you've learned into practice. Create the token, manage the metadata and prepare the launch.",
+    readyBtn: "Launch your token",
+  },
+  ES: {
+    badge: "Solana Guides",
+    heading: "Aprende todo sobre",
+    headingAccent: " Solana",
+    desc: "Guías prácticas para crear tokens SPL, gestionar authority, preparar liquidez, leer tendencias y lanzar de forma más segura y profesional.",
+    searchPlaceholder: "Buscar una guía...",
+    allCat: "Todos",
+    notFound: "No se encontraron guías.",
+    readTime: "lectura",
+    read: "Leer →",
+    back: "← Volver a guías",
+    ready: "¿Listo para crear tu token?",
+    readyDesc: "Pon en práctica lo que aprendiste. Crea el token, gestiona los metadatos y prepara el lanzamiento.",
+    readyBtn: "Lanzar tu token",
+  },
+  FR: {
+    badge: "Solana Guides",
+    heading: "Apprenez tout sur",
+    headingAccent: " Solana",
+    desc: "Guides pratiques pour créer des tokens SPL, gérer les authority, préparer la liquidité, lire les tendances et lancer de manière plus sûre et professionnelle.",
+    searchPlaceholder: "Rechercher un guide...",
+    allCat: "Tous",
+    notFound: "Aucun guide trouvé.",
+    readTime: "de lecture",
+    read: "Lire →",
+    back: "← Retour aux guides",
+    ready: "Prêt à créer votre token?",
+    readyDesc: "Mettez en pratique ce que vous avez appris. Créez le token, gérez les métadonnées et préparez le lancement.",
+    readyBtn: "Lancer votre token",
+  },
+  PT: {
+    badge: "Solana Guides",
+    heading: "Aprenda tudo sobre",
+    headingAccent: " Solana",
+    desc: "Guias práticos para criar tokens SPL, gerenciar authority, preparar liquidez, ler tendências e lançar de forma mais segura e profissional.",
+    searchPlaceholder: "Pesquisar um guia...",
+    allCat: "Todos",
+    notFound: "Nenhum guia encontrado.",
+    readTime: "leitura",
+    read: "Ler →",
+    back: "← Voltar às guias",
+    ready: "Pronto para criar seu token?",
+    readyDesc: "Coloque em prática o que aprendeu. Crie o token, gerencie os metadados e prepare o lançamento.",
+    readyBtn: "Lançar seu token",
+  },
+  DE: {
+    badge: "Solana Guides",
+    heading: "Lerne alles über",
+    headingAccent: " Solana",
+    desc: "Praktische Anleitungen zum Erstellen von SPL-Tokens, Verwalten von Authorities, Vorbereiten von Liquidität, Lesen von Trends und professionellem Launch.",
+    searchPlaceholder: "Guide suchen...",
+    allCat: "Alle",
+    notFound: "Keine Guides gefunden.",
+    readTime: "Lesezeit",
+    read: "Lesen →",
+    back: "← Zurück zu Guides",
+    ready: "Bereit, deinen Token zu erstellen?",
+    readyDesc: "Setze das Gelernte in die Praxis um. Erstelle den Token, verwalte die Metadaten und bereite den Launch vor.",
+    readyBtn: "Token launchen",
+  },
+} as const;
 
 export default function GuidesPage() {
+  const [lang] = useLang();
+  const t = GT[lang] ?? GT["EN"];
+  const CATEGORIES = [t.allCat, "Basics", "Tutorial", "Sicurezza", "Marketing", "Strategia", "Educazione"];
+
   const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("Tutti");
+  const [category, setCategory] = useState<string>(t.allCat);
 
   const catColors: Record<string, string> = {
     Basics: "#9945FF",
@@ -35,11 +129,11 @@ export default function GuidesPage() {
         g.desc.toLowerCase().includes(query) ||
         g.category.toLowerCase().includes(query);
 
-      const matchCat = category === "Tutti" || g.category === category;
+      const matchCat = category === t.allCat || g.category === category;
 
       return matchSearch && matchCat;
     });
-  }, [search, category]);
+  }, [search, category, t.allCat]);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -173,7 +267,7 @@ export default function GuidesPage() {
               fontWeight: 800,
             }}
           >
-            ← Torna alle guide
+            {t.back}
           </button>
 
           <article>
@@ -191,7 +285,7 @@ export default function GuidesPage() {
               </p>
 
               <div style={{ display: "flex", gap: 16, color: "rgba(255,255,255,0.35)", fontSize: 13 }}>
-                <span>⏱ {selectedGuide.time} di lettura</span>
+                <span>⏱ {selectedGuide.time} {t.readTime}</span>
               </div>
             </header>
 
@@ -201,10 +295,10 @@ export default function GuidesPage() {
           </article>
 
           <div style={{ marginTop: 64, padding: 32, background: "linear-gradient(135deg, rgba(153,69,255,0.1), rgba(20,241,149,0.05))", border: "1px solid rgba(153,69,255,0.2)", borderRadius: 24, textAlign: "center" }}>
-            <h3 style={{ fontSize: 24, fontWeight: 900, marginBottom: 12 }}>Pronto a creare il tuo token?</h3>
-            <p style={{ color: "rgba(255,255,255,0.4)", marginBottom: 24 }}>Metti in pratica quello che hai imparato. Crea il token, cura i metadata e prepara il lancio.</p>
+            <h3 style={{ fontSize: 24, fontWeight: 900, marginBottom: 12 }}>{t.ready}</h3>
+            <p style={{ color: "rgba(255,255,255,0.4)", marginBottom: 24 }}>{t.readyDesc}</p>
             <Link href="/?app=true" style={{ display: "inline-block", padding: "14px 32px", borderRadius: 16, background: "linear-gradient(135deg, #9945FF, #14F195)", color: "white", fontWeight: 800, textDecoration: "none", fontSize: 15 }}>
-              Lancia il tuo token
+              {t.readyBtn}
             </Link>
           </div>
         </div>
@@ -226,23 +320,23 @@ export default function GuidesPage() {
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 999, marginBottom: 24, background: "rgba(153,69,255,0.10)", border: "1px solid rgba(153,69,255,0.22)", boxShadow: "0 0 30px rgba(153,69,255,0.12)" }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#14F195", boxShadow: "0 0 14px #14F195" }} />
             <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", background: "linear-gradient(90deg, #9945FF, #14F195)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              Solana Guides
+              {t.badge}
             </span>
           </div>
 
           <h1 style={{ fontSize: "clamp(36px, 6vw, 72px)", fontWeight: 950, letterSpacing: "-0.05em", marginBottom: 16, lineHeight: 1 }}>
-            Impara tutto su
-            <span style={{ background: "linear-gradient(90deg, #9945FF, #14F195)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}> Solana</span>
+            {t.heading}
+            <span style={{ background: "linear-gradient(90deg, #9945FF, #14F195)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{t.headingAccent}</span>
           </h1>
 
           <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 18, maxWidth: 980, lineHeight: 1.7, textAlign: "center", margin: "0 auto" }}>
-            Guide pratiche per creare token SPL, gestire authority, preparare liquidità, leggere i trend e lanciare in modo più sicuro e professionale.
+            {t.desc}
           </p>
         </section>
 
         <div style={{ marginBottom: 36, display: "flex", justifyContent: "center", width: "100%" }}>
           <input
-            placeholder="Cerca una guida..."
+            placeholder={t.searchPlaceholder}
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{
@@ -332,8 +426,8 @@ export default function GuidesPage() {
               </p>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto" }}>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>⏱ {guide.time}</span>
-                <span style={{ fontSize: 13, color: "#9945FF", fontWeight: 800 }}>Leggi →</span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>⏱ {guide.time} {t.readTime}</span>
+                <span style={{ fontSize: 13, color: "#9945FF", fontWeight: 800 }}>{t.read}</span>
               </div>
             </Link>
           ))}
@@ -341,7 +435,7 @@ export default function GuidesPage() {
 
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "80px 0", color: "rgba(255,255,255,0.35)" }}>
-            Nessuna guida trovata.
+            {t.notFound}
           </div>
         )}
       </div>

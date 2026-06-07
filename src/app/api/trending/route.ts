@@ -4,41 +4,34 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 let lastTokens: string[] = [];
-let callCount = 0;
 let cacheData: any = null;
 let cacheTime = 0;
-const CACHE_MS = 10000;
+const CACHE_MS = 6000;
 
 export async function GET() {
   if (cacheData && Date.now() - cacheTime < CACHE_MS) {
     return NextResponse.json(cacheData);
   }
+
   try {
-    callCount++;
+    // Fetch tutti e 4 gli endpoint in parallelo
+    const [profilesRes, boostsLatestRes, boostsTopRes, searchRes] = await Promise.allSettled([
+      fetch("https://api.dexscreener.com/token-profiles/latest/v1", { headers: { Accept: "application/json" }, cache: "no-store" }),
+      fetch("https://api.dexscreener.com/token-boosts/latest/v1", { headers: { Accept: "application/json" }, cache: "no-store" }),
+      fetch("https://api.dexscreener.com/token-boosts/top/v1", { headers: { Accept: "application/json" }, cache: "no-store" }),
+      fetch("https://api.dexscreener.com/latest/dex/search?q=pump", { headers: { Accept: "application/json" }, cache: "no-store" }),
+    ]);
 
-    // Ruotiamo gli endpoint per avere sempre token diversi
-    const endpoints = [
-      "https://api.dexscreener.com/token-profiles/latest/v1",
-      "https://api.dexscreener.com/token-boosts/latest/v1",
-      "https://api.dexscreener.com/token-boosts/top/v1",
-    ];
-
-    // Fetch tutti e 3 gli endpoint sempre
-    const [profilesRes, boostsLatestRes, boostsTopRes] = await Promise.all(
-      endpoints.map(url =>
-        fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" })
-      )
-    );
-
-    const profiles = profilesRes.ok ? await profilesRes.json() : [];
-    const boostsLatest = boostsLatestRes.ok ? await boostsLatestRes.json() : [];
-    const boostsTop = boostsTopRes.ok ? await boostsTopRes.json() : [];
+    const profiles   = profilesRes.status    === "fulfilled" && profilesRes.value.ok    ? await profilesRes.value.json()    : [];
+    const boostsLatest = boostsLatestRes.status === "fulfilled" && boostsLatestRes.value.ok ? await boostsLatestRes.value.json() : [];
+    const boostsTop  = boostsTopRes.status    === "fulfilled" && boostsTopRes.value.ok    ? await boostsTopRes.value.json()    : [];
+    const searchData = searchRes.status       === "fulfilled" && searchRes.value.ok       ? await searchRes.value.json()       : {};
 
     // Combina tutti i token Solana
     const rawTokens = [
       ...(Array.isArray(boostsLatest) ? boostsLatest : []),
-      ...(Array.isArray(profiles) ? profiles : []),
-      ...(Array.isArray(boostsTop) ? boostsTop : []),
+      ...(Array.isArray(profiles)     ? profiles     : []),
+      ...(Array.isArray(boostsTop)    ? boostsTop    : []),
     ].filter((t: any) => t.chainId === "solana" && t.tokenAddress);
 
     // Deduplica
@@ -47,41 +40,35 @@ export async function GET() {
         arr.findIndex((x: any) => x.tokenAddress === t.tokenAddress) === i
     );
 
-    // Prendi fino a 50 token
-    const tokenAddresses = uniqueTokens.map((t: any) => t.tokenAddress).slice(0, 50);
+    const tokenAddresses = uniqueTokens.map((t: any) => t.tokenAddress).slice(0, 60);
 
-    // Fetch dati di mercato in batch da 30
-    let pairs: any[] = [];
+    // Fetch dati di mercato — tutti i batch in parallelo
     const batchSize = 30;
-
+    const batches: string[][] = [];
     for (let i = 0; i < tokenAddresses.length; i += batchSize) {
-      const batch = tokenAddresses.slice(i, i + batchSize);
-      try {
-        const pairsRes = await fetch(
-          `https://api.dexscreener.com/tokens/v1/solana/${batch.join(",")}`,
-          { headers: { Accept: "application/json" }, cache: "no-store" }
-        );
-        if (pairsRes.ok) {
-          const data = await pairsRes.json();
-          if (Array.isArray(data)) pairs = [...pairs, ...data];
-        }
-      } catch {}
+      batches.push(tokenAddresses.slice(i, i + batchSize));
     }
 
-    // Anche fetch search per token recenti pump.fun
-    try {
-      const searchRes = await fetch(
-        "https://api.dexscreener.com/latest/dex/search?q=pump",
-        { headers: { Accept: "application/json" }, cache: "no-store" }
-      );
-      if (searchRes.ok) {
-        const searchData = await searchRes.json();
-        const searchPairs = (searchData.pairs || []).filter(
-          (p: any) => p.chainId === "solana"
-        );
-        pairs = [...pairs, ...searchPairs];
+    const batchResults = await Promise.allSettled(
+      batches.map(batch =>
+        fetch(`https://api.dexscreener.com/tokens/v1/solana/${batch.join(",")}`, {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        })
+      )
+    );
+
+    let pairs: any[] = [];
+    for (const result of batchResults) {
+      if (result.status === "fulfilled" && result.value.ok) {
+        const data = await result.value.json();
+        if (Array.isArray(data)) pairs = [...pairs, ...data];
       }
-    } catch {}
+    }
+
+    // Aggiungi pair dalla search pump
+    const searchPairs = ((searchData.pairs || []) as any[]).filter((p: any) => p.chainId === "solana");
+    pairs = [...pairs, ...searchPairs];
 
     // Mappa migliore pair per ogni token
     const tokenMap = new Map<string, any>();
@@ -94,7 +81,7 @@ export async function GET() {
       }
     });
 
-    // Aggiungi anche i token dai pairs che non erano nella lista originale
+    // Arricchisci anche con token dai pairs non presenti nella lista originale
     pairs.forEach((pair: any) => {
       const addr = pair.baseToken?.address;
       if (!addr) return;
@@ -110,6 +97,8 @@ export async function GET() {
     });
 
     const previousSet = new Set(lastTokens);
+
+    const BAD_WORDS = ["nazi", "hitler", "nigger", "porn", "sex", "rape", "kill", "terror", "isis", "kkk"];
 
     const enriched = uniqueTokens
       .map((t: any) => {
@@ -137,11 +126,10 @@ export async function GET() {
         };
       })
       .filter((t: any) => {
-  if (!t.marketCap && !t.volume24h) return false;
-  const bad = ["nazi", "hitler", "nigger", "porn", "sex", "rape", "kill", "terror", "isis", "kkk", "christ", "allah", "pedо"];
-  const nameCheck = (t.name + " " + t.symbol + " " + t.description).toLowerCase();
-  return !bad.some(w => nameCheck.includes(w));
-})
+        if (!t.marketCap && !t.volume24h) return false;
+        const nameCheck = (t.name + " " + t.symbol + " " + t.description).toLowerCase();
+        return !BAD_WORDS.some(w => nameCheck.includes(w));
+      })
       .sort((a: any, b: any) => {
         if (b.isNew !== a.isNew) return Number(b.isNew) - Number(a.isNew);
         return b.volume24h - a.volume24h;
@@ -156,6 +144,7 @@ export async function GET() {
     return NextResponse.json(result);
   } catch (e: any) {
     console.error("Trending API error:", e?.message || e);
+    if (cacheData) return NextResponse.json(cacheData);
     return NextResponse.json({ tokens: [], updatedAt: Date.now(), total: 0 });
   }
 }
