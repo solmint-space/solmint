@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import TokenForm from "@/components/TokenForm";
 import LiquidityPool from "@/components/LiquidityPool";
+import SiteNavbar from "@/components/SiteNavbar";
 import { GUIDES } from "@/data/guides";
 
 const WalletMultiButton = dynamic(
@@ -990,88 +991,14 @@ export default function Home() {
         />
       </div>
 
-     <header
-  className="border-b px-4 sm:px-6 py-4 sticky top-0 z-50"
-  style={{
-    borderColor: "rgba(255,255,255,0.07)",
-    background: "rgba(7,7,15,0.82)",
-    backdropFilter: "blur(26px)",
-    WebkitBackdropFilter: "blur(26px)",
-  }}
->
-  <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-    <button
-      onClick={() => setShowApp(false)}
-      className="flex items-center gap-3 min-w-0"
-      style={{ background: "transparent", border: 0, cursor: "pointer" }}
-    >
-      <Logo size={34} />
-      <div className="leading-tight text-left min-w-0">
-        <span className="block font-black text-lg sm:text-xl tracking-tight truncate text-white">
-          SolMint Space
-        </span>
-        <span
-          className="hidden sm:block text-[10px] font-bold uppercase tracking-[0.22em]"
-          style={{ color: "rgba(255,255,255,0.28)" }}
-        >
-          {t.brandSub}
-        </span>
-      </div>
-
-      <span
-        className="hidden sm:inline-flex text-xs px-2.5 py-1 rounded-full font-semibold"
-        style={{
-          background: "rgba(20,241,149,0.1)",
-          color: "#14F195",
-          border: "1px solid rgba(20,241,149,0.25)",
-        }}
-      >
-        {t.mainnet}
-      </span>
-    </button>
-
-    <div className="hidden md:flex items-center gap-2">
-      <button
-        onClick={() => setShowApp(false)}
-        className="px-4 py-2 rounded-full text-sm font-bold"
-        style={{
-          color: "rgba(255,255,255,0.65)",
-          background: "rgba(255,255,255,0.045)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        Home
-      </button>
-
-      <a
-        href="/ai-website"
-        className="px-4 py-2 rounded-full text-sm font-bold"
-        style={{
-          color: "#c7a6ff",
-          background: "rgba(153,69,255,0.08)",
-          border: "1px solid rgba(153,69,255,0.18)",
-          textDecoration: "none",
-        }}
-      >
-        AI Website
-      </a>
-    </div>
-
-    <WalletMultiButton
-      style={{
-        background: "linear-gradient(135deg, #9945FF, #14F195)",
-        borderRadius: "14px",
-        fontSize: "13px",
-        padding: "10px 16px",
-        height: "auto",
-        fontFamily: "inherit",
-      }}
-    />
-  </div>
-</header>
+      <SiteNavbar />
 
       <div className="relative" style={{ zIndex: 1 }}>
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-10 pb-4">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-28 pb-4">
+          {/* Wallet button */}
+          <div className="flex justify-end mb-4">
+            <WalletMultiButton style={{ background: "linear-gradient(135deg,#9945FF,#14F195)", borderRadius: "14px", fontSize: "13px", padding: "10px 16px", height: "auto", fontFamily: "inherit" }} />
+          </div>
           <div
             className="flex gap-1 p-1 rounded-xl mb-6"
             style={{

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import SiteNavbar from "@/components/SiteNavbar";
 import SiteFooter from "@/components/SiteFooter";
 import { useLang } from "@/lib/useLang";
@@ -362,29 +362,34 @@ export default function TrendingPage() {
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [newToast, setNewToast] = useState<{ name: string; symbol: string; icon: string | null } | null>(null);
 
+  const seenAddresses = useRef(new Set<string>());
+  const firstLoad = useRef(true);
+
   const fetchTokens = useCallback(async () => {
     try {
       const res = await fetch(`/api/trending?t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
-      const newTokens: Token[] = data.tokens || [];
+      const incoming: Token[] = data.tokens || [];
 
-      setTokens(prev => {
-        const prevAddresses = new Set(prev.map((t: Token) => t.address));
-        const mapped = newTokens.map((t: Token) => ({
-          ...t,
-          isNew: prevAddresses.size > 0 && !prevAddresses.has(t.address),
-        }));
-        // Mostra toast per il primo token nuovo trovato
-        if (prevAddresses.size > 0) {
-          const firstNew = mapped.find(t => t.isNew);
-          if (firstNew) {
-            setNewToast({ name: firstNew.name, symbol: firstNew.symbol, icon: firstNew.icon });
-            setTimeout(() => setNewToast(null), 4000);
-          }
-        }
-        return mapped;
-      });
+      const isFirst = firstLoad.current;
+      if (isFirst) firstLoad.current = false;
 
+      const mapped = incoming.map((t: Token) => ({
+        ...t,
+        // Nuovo se: non è il primo load E non era già stato visto
+        isNew: !isFirst && !seenAddresses.current.has(t.address),
+      }));
+
+      // Segna tutto come visto
+      incoming.forEach(t => seenAddresses.current.add(t.address));
+
+      const firstNew = mapped.find(t => t.isNew);
+      if (firstNew) {
+        setNewToast({ name: firstNew.name, symbol: firstNew.symbol, icon: firstNew.icon });
+        setTimeout(() => setNewToast(null), 4200);
+      }
+
+      setTokens(mapped);
       setLastUpdate(new Date());
     } catch {
     } finally {
