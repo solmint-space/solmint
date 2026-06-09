@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { SolanaWalletProvider } from "@/components/WalletProvider";
 import PremiumBackground from "@/components/PremiumBackground";
@@ -145,18 +144,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <Script
-          id="jsonld-website"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-          strategy="beforeInteractive"
-        />
-      </head>
       <body
         className={`${inter.className} text-white min-h-screen`}
         style={{ background: "#07070f" }}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <PremiumBackground />
         <SolanaWalletProvider>
           <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
