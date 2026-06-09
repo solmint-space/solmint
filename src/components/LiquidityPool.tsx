@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
-import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
+import { getAssociatedTokenAddress, getAccount, getMint } from "@solana/spl-token";
 
 export default function LiquidityPool() {
   const { connection } = useConnection();
@@ -14,7 +14,8 @@ export default function LiquidityPool() {
   const [tokenFound, setTokenFound] = useState(false);
   const [tokenName, setTokenName] = useState("");
   const [tokenSymbol, setTokenSymbol] = useState("");
-  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const [tokenBalance, setTokenBalance] = useState<bigint | null>(null);
+  const [tokenDecimals, setTokenDecimals] = useState<number>(9);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("create");
   const [removePoolId, setRemovePoolId] = useState("");
@@ -28,9 +29,13 @@ export default function LiquidityPool() {
     try {
       const mint = new PublicKey(mintAddress);
       const ata = await getAssociatedTokenAddress(mint, publicKey);
-      const account = await getAccount(connection, ata);
+      const [account, mintInfo] = await Promise.all([
+        getAccount(connection, ata),
+        getMint(connection, mint),
+      ]);
       setTokenFound(true);
-      setTokenBalance(Number(account.amount));
+      setTokenBalance(account.amount);
+      setTokenDecimals(mintInfo.decimals);
       try {
         const META_PROGRAM = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
         const [metaPDA] = PublicKey.findProgramAddressSync(
@@ -129,7 +134,12 @@ export default function LiquidityPool() {
                 <div style={{ display: "flex", gap: 16, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
                   {tokenName && <span><strong style={{ color: "white" }}>{tokenName}</strong></span>}
                   {tokenSymbol && <span>$ {tokenSymbol}</span>}
-                  {tokenBalance !== null && <span>Balance: {(tokenBalance / 1e9).toLocaleString()}</span>}
+                  {tokenBalance !== null && (
+                    <span>
+                      Balance:{" "}
+                      {(Number(tokenBalance) / 10 ** tokenDecimals).toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </div>
             )}

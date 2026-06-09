@@ -302,11 +302,43 @@ async function getTrendingTokens() {
 }
 
 // ============================================================
+// RATE LIMITING — max 20 richieste AI per IP ogni 10 minuti
+// ============================================================
+
+const aiRateMap = new Map<string, { count: number; resetAt: number }>();
+const AI_LIMIT = 20;
+const AI_WINDOW_MS = 10 * 60 * 1000;
+
+function checkAiRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = aiRateMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    aiRateMap.set(ip, { count: 1, resetAt: now + AI_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= AI_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
+// ============================================================
 // ENDPOINT
 // ============================================================
 
 export async function POST(req: NextRequest) {
   try {
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "unknown";
+
+    if (!checkAiRateLimit(ip)) {
+      return NextResponse.json(
+        { error: "Troppe richieste. Riprova tra qualche minuto." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { type, tokenData, answers } = body;
 

@@ -8,7 +8,17 @@ import { LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram } from "@solana
 
 const TREASURY = process.env.NEXT_PUBLIC_TREASURY_WALLET!;
 
-export default function TokenForm() {
+interface TokenFormProps {
+  initialRevokeMint?: boolean;
+  initialRevokeFreeze?: boolean;
+  initialRevokeUpdate?: boolean;
+}
+
+export default function TokenForm({
+  initialRevokeMint = false,
+  initialRevokeFreeze = false,
+  initialRevokeUpdate = false,
+}: TokenFormProps) {
   const { connection } = useConnection();
   const { publicKey, signTransaction } = useWallet();
 
@@ -22,9 +32,9 @@ export default function TokenForm() {
   const [telegram, setTelegram] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [revokeMint, setRevokeMint] = useState(false);
-  const [revokeFreeze, setRevokeFreeze] = useState(false);
-  const [revokeUpdate, setRevokeUpdate] = useState(false);
+  const [revokeMint, setRevokeMint] = useState(initialRevokeMint);
+  const [revokeFreeze, setRevokeFreeze] = useState(initialRevokeFreeze);
+  const [revokeUpdate, setRevokeUpdate] = useState(initialRevokeUpdate);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [mintAddress, setMintAddress] = useState("");
@@ -85,12 +95,29 @@ export default function TokenForm() {
       return;
     }
 
+    // Validate inputs before spending any SOL
+    const trimmedName   = name.trim();
+    const trimmedSymbol = symbol.trim();
+    if (trimmedName.length > 32) {
+      setError("Nome troppo lungo — massimo 32 caratteri (limite Metaplex).");
+      return;
+    }
+    if (trimmedSymbol.length > 10) {
+      setError("Simbolo troppo lungo — massimo 10 caratteri (limite Metaplex).");
+      return;
+    }
+    const supplyCheck = supply.replace(/,/g, "").trim();
+    if (!/^\d+$/.test(supplyCheck) || BigInt(supplyCheck) === BigInt(0)) {
+      setError("Supply non valida — inserisci un numero intero maggiore di 0.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setMintAddress("");
 
     try {
-      // 1. Paga la fee al treasury
+      // 1. Paga la fee al treasury e aspetta conferma on-chain
       setStatus("Pagamento fee in corso...");
       const feeTx = new Transaction().add(
         SystemProgram.transfer({
@@ -99,38 +126,50 @@ export default function TokenForm() {
           lamports: Math.round(totalFee * LAMPORTS_PER_SOL),
         })
       );
-      const { blockhash } = await connection.getLatestBlockhash();
-      feeTx.recentBlockhash = blockhash;
+      const { blockhash: feeBlochhash, lastValidBlockHeight: feeLastValid } =
+        await connection.getLatestBlockhash("confirmed");
+      feeTx.recentBlockhash = feeBlochhash;
       feeTx.feePayer = publicKey;
       const signedFee = await signTransaction(feeTx);
-      await connection.sendRawTransaction(signedFee.serialize());
+      const feeSig = await connection.sendRawTransaction(signedFee.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: "confirmed",
+      });
+      await connection.confirmTransaction(
+        { signature: feeSig, blockhash: feeBlochhash, lastValidBlockHeight: feeLastValid },
+        "confirmed"
+      );
 
       // 2. Upload immagine su IPFS
       setStatus("Upload immagine su IPFS...");
       const imageUrl = await uploadImageToIPFS(image);
 
-      // 3. Upload metadata su IPFS
+      // 3. Upload metadata su IPFS — formato standard Jupiter/Solana token list
       setStatus("Upload metadata su IPFS...");
-      const metadata = {
+      const extensions: Record<string, string> = {};
+      if (website)  extensions.website  = website;
+      if (twitter)  extensions.twitter  = twitter;
+      if (telegram) extensions.telegram = telegram;
+
+      const metadata: Record<string, unknown> = {
         name,
         symbol,
         description,
         image: imageUrl,
-        extensions: {
-          website: website || undefined,
-          twitter: twitter || undefined,
-          telegram: telegram || undefined,
-        },
       };
+      if (website) metadata.external_url = website;
+      if (Object.keys(extensions).length > 0) metadata.extensions = extensions;
+
       const metadataUri = await uploadMetadataToIPFS(metadata);
 
       // 4. Crea il token on-chain
       setStatus("Creazione token su Solana...");
+
       const config: TokenConfig = {
         name,
         symbol,
         decimals,
-        supply: Number(supply.replace(/,/g, "")),
+        supply: BigInt(supplyCheck),
         metadataUri,
         revokeMint,
         revokeFreeze,
@@ -139,7 +178,7 @@ export default function TokenForm() {
 
       const mint = await createToken(connection, publicKey, config, signTransaction);
       setMintAddress(mint);
-      setStatus("Token creato con successo! 🎉");
+      setStatus("Token creato con successo!");
     } catch (e: any) {
       setError(e.message || "Errore durante la creazione");
       setStatus("");
@@ -164,11 +203,11 @@ style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Nome *</label>
-            <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="es. MyToken" value={name} onChange={e => setName(e.target.value)} />
+            <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="es. MyToken" maxLength={32} value={name} onChange={e => setName(e.target.value)} />
           </div>
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Simbolo *</label>
-            <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="es. MTK" value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} />
+            <input className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="es. MTK" maxLength={10} value={symbol} onChange={e => setSymbol(e.target.value.toUpperCase())} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">

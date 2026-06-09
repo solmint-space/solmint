@@ -4,6 +4,8 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
+  SYSVAR_RENT_PUBKEY,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import {
   createInitializeMintInstruction,
@@ -21,7 +23,7 @@ export interface TokenConfig {
   name: string;
   symbol: string;
   decimals: number;
-  supply: number;
+  supply: bigint;
   metadataUri: string;
   revokeMint: boolean;
   revokeFreeze: boolean;
@@ -40,59 +42,59 @@ function createMetadataInstruction(
   symbol: string,
   uri: string,
   isMutable: boolean
-) {
-  const data = Buffer.alloc(1000);
+): TransactionInstruction {
+  const nameBytes = Buffer.from(name, "utf8");
+  const symbolBytes = Buffer.from(symbol, "utf8");
+  const uriBytes = Buffer.from(uri, "utf8");
+
+  // Pre-calculate exact size to avoid any buffer issues
+  const dataSize =
+    1 +          // instruction discriminator
+    4 + nameBytes.length +
+    4 + symbolBytes.length +
+    4 + uriBytes.length +
+    2 +          // seller_fee_basis_points
+    1 +          // creators: Option::None
+    1 +          // collection: Option::None
+    1 +          // uses: Option::None
+    1 +          // is_mutable
+    1;           // collection_details: Option::None
+
+  const data = Buffer.alloc(dataSize);
   let offset = 0;
 
-  // Instruction discriminator: CreateMetadataAccountV3 = 33
+  // CreateMetadataAccountV3 discriminator
   data.writeUInt8(33, offset++);
 
-  // name
-  const nameBytes = Buffer.from(name, "utf8");
   data.writeUInt32LE(nameBytes.length, offset); offset += 4;
   nameBytes.copy(data, offset); offset += nameBytes.length;
 
-  // symbol
-  const symbolBytes = Buffer.from(symbol, "utf8");
   data.writeUInt32LE(symbolBytes.length, offset); offset += 4;
   symbolBytes.copy(data, offset); offset += symbolBytes.length;
 
-  // uri
-  const uriBytes = Buffer.from(uri, "utf8");
   data.writeUInt32LE(uriBytes.length, offset); offset += 4;
   uriBytes.copy(data, offset); offset += uriBytes.length;
 
-  // seller_fee_basis_points
-  data.writeUInt16LE(0, offset); offset += 2;
-
-  // creators: None
-  data.writeUInt8(0, offset++);
-
-  // collection: None
-  data.writeUInt8(0, offset++);
-
-  // uses: None
-  data.writeUInt8(0, offset++);
-
-  // is_mutable
+  data.writeUInt16LE(0, offset); offset += 2; // seller_fee_basis_points
+  data.writeUInt8(0, offset++);               // creators: None
+  data.writeUInt8(0, offset++);               // collection: None
+  data.writeUInt8(0, offset++);               // uses: None
   data.writeUInt8(isMutable ? 1 : 0, offset++);
-
-  // collection_details: None
-  data.writeUInt8(0, offset++);
-
-  const { TransactionInstruction, AccountMeta } = require("@solana/web3.js");
+  data.writeUInt8(0, offset++);               // collection_details: None
 
   return new TransactionInstruction({
     programId: METADATA_PROGRAM_ID,
     keys: [
-      { pubkey: metadataPDA, isSigner: false, isWritable: true },
-      { pubkey: mint, isSigner: false, isWritable: false },
-      { pubkey: payer, isSigner: true, isWritable: false },
-      { pubkey: payer, isSigner: true, isWritable: true },
-      { pubkey: payer, isSigner: true, isWritable: false },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      // Accounts order matches CreateMetadataAccountV3 on-chain program
+      { pubkey: metadataPDA,               isSigner: false, isWritable: true  }, // metadata
+      { pubkey: mint,                       isSigner: false, isWritable: false }, // mint
+      { pubkey: payer,                      isSigner: true,  isWritable: false }, // mint_authority
+      { pubkey: payer,                      isSigner: true,  isWritable: true  }, // payer
+      { pubkey: payer,                      isSigner: false, isWritable: false }, // update_authority (not a separate signer)
+      { pubkey: SystemProgram.programId,    isSigner: false, isWritable: false }, // system_program
+      { pubkey: SYSVAR_RENT_PUBKEY,         isSigner: false, isWritable: false }, // rent
     ],
-    data: data.slice(0, offset),
+    data,
   });
 }
 
@@ -148,7 +150,7 @@ export async function createToken(
       mintKeypair.publicKey,
       ata,
       payer,
-      BigInt(config.supply) * BigInt(10 ** config.decimals)
+      config.supply * BigInt(10 ** config.decimals)
     )
   );
 
@@ -180,14 +182,20 @@ export async function createToken(
     );
   }
 
-  const { blockhash } = await connection.getLatestBlockhash();
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
   tx.recentBlockhash = blockhash;
   tx.feePayer = payer;
   tx.partialSign(mintKeypair);
 
   const signed = await signTransaction(tx);
-  const sig = await connection.sendRawTransaction(signed.serialize());
-  await connection.confirmTransaction(sig, "confirmed");
+  const sig = await connection.sendRawTransaction(signed.serialize(), {
+    skipPreflight: false,
+    preflightCommitment: "confirmed",
+  });
+  await connection.confirmTransaction(
+    { signature: sig, blockhash, lastValidBlockHeight },
+    "confirmed"
+  );
 
   return mintKeypair.publicKey.toString();
 }

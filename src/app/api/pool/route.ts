@@ -40,10 +40,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Parametri mancanti" }, { status: 400 });
     }
 
+    const tokenDecimals = Number(decimals ?? 9);
+    if (!Number.isInteger(tokenDecimals) || tokenDecimals < 0 || tokenDecimals > 18) {
+      return NextResponse.json({ error: "Decimali non validi (0-18)" }, { status: 400 });
+    }
+
     const ownerPubkey = new PublicKey(owner);
     const mintA = new PublicKey(mintAddress);
     const mintB = NATIVE_MINT;
-    const tokenDecimals = decimals || 9;
 
     const [token0, token1] = mintA.toBuffer().compare(mintB.toBuffer()) < 0
       ? [mintA, mintB]
@@ -84,7 +88,7 @@ export async function POST(req: NextRequest) {
     const ownerLpToken = await getAssociatedTokenAddress(lpMint, ownerPubkey);
 
     const tx = new Transaction();
-    const { blockhash } = await connection.getLatestBlockhash();
+    const { blockhash } = await connection.getLatestBlockhash("confirmed");
     tx.recentBlockhash = blockhash;
     tx.feePayer = ownerPubkey;
 

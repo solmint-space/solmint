@@ -549,9 +549,18 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+type PlanRevokes = { mint: boolean; freeze: boolean; update: boolean };
+
+const PLAN_REVOKES: Record<string, PlanRevokes> = {
+  Starter:  { mint: false, freeze: false, update: false },
+  Standard: { mint: false, freeze: false, update: false }, // l'utente sceglie quale 1 revoca vuole
+  Pro:      { mint: true,  freeze: true,  update: true  },
+};
+
 export default function Home() {
   const [tab, setTab] = useState("create");
   const [showApp, setShowApp] = useState(false);
+  const [planRevokes, setPlanRevokes] = useState<PlanRevokes>(PLAN_REVOKES.Starter);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [lang, setLang] = useState<Lang>("EN");
@@ -730,7 +739,15 @@ export default function Home() {
           </div>
         </div>
 
-        {tab === "create" ? <TokenForm /> : <LiquidityPool />}
+        {tab === "create" ? (
+          <TokenForm
+            initialRevokeMint={planRevokes.mint}
+            initialRevokeFreeze={planRevokes.freeze}
+            initialRevokeUpdate={planRevokes.update}
+          />
+        ) : (
+          <LiquidityPool />
+        )}
 
         <footer
           className="text-center py-10 text-xs"
@@ -1291,7 +1308,14 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
-                  <button onClick={() => setShowApp(true)} className="w-full py-4 rounded-2xl text-sm font-bold transition-all hover:opacity-90" style={p.highlight ? { background: "linear-gradient(135deg, #9945FF, #14F195)", color: "white" } : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  <button
+                    onClick={() => {
+                      setPlanRevokes(PLAN_REVOKES[p.name] ?? PLAN_REVOKES.Starter);
+                      setShowApp(true);
+                    }}
+                    className="w-full py-4 rounded-2xl text-sm font-bold transition-all hover:opacity-90"
+                    style={p.highlight ? { background: "linear-gradient(135deg, #9945FF, #14F195)", color: "white" } : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.1)" }}
+                  >
                     {t.startNow}
                   </button>
                 </div>
