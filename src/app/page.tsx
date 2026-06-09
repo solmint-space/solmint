@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Script from "next/script";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import TokenForm from "@/components/TokenForm";
@@ -8,6 +9,54 @@ import LiquidityPool from "@/components/LiquidityPool";
 import SiteNavbar from "@/components/SiteNavbar";
 import { GUIDES } from "@/data/guides";
 import { getGuideTitle, getGuideDesc, type GuideLang } from "@/data/guidesI18n";
+
+// Static English FAQ for Google rich snippets — content matches the FAQ section on-page
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Is SolMint safe?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. SolMint never has access to your private keys. Everything happens through your wallet.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What does revoking authorities mean?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "It makes the token more trustless: no extra minting, freeze or metadata updates if you choose the revokes.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How much does it cost to create a Solana token?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Starter costs 0.1 SOL + network fees (~0.01 SOL). Standard 0.2 SOL. Pro 0.4 SOL. No subscriptions.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I create a liquidity pool?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. You can use the Liquidity Pool section to create and manage liquidity on Raydium directly from SolMint.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I generate a website for my token?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. The AI Website feature generates a landing page for your coin for 0.2 SOL.",
+      },
+    },
+  ],
+};
 
 const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
@@ -783,6 +832,7 @@ export default function Home() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       <main className="min-h-screen overflow-x-hidden" style={{ background: "#07070f", color: "white", paddingBottom: "env(safe-area-inset-bottom)" }}>
         <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }} />
