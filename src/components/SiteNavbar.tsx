@@ -2,25 +2,21 @@
 
 import { useEffect, useState } from "react";
 
-type Lang = "IT" | "EN" | "ES" | "FR" | "PT" | "DE";
+type Lang = "IT" | "EN";
 
 const NAV: Record<Lang, [string, string][]> = {
-  IT:  [["Features","/#features"],["Come funziona","/#come-funziona"],["Prezzi","/#prezzi"],["Trending","/trending"],["Guide","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
-  EN:  [["Features","/#features"],["How it works","/#come-funziona"],["Pricing","/#prezzi"],["Trending","/trending"],["Guides","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
-  ES:  [["Características","/#features"],["Cómo funciona","/#come-funziona"],["Precios","/#prezzi"],["Trending","/trending"],["Guías","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
-  FR:  [["Fonctionnalités","/#features"],["Comment ça marche","/#come-funziona"],["Tarifs","/#prezzi"],["Tendances","/trending"],["Guides","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
-  PT:  [["Recursos","/#features"],["Como funciona","/#come-funziona"],["Preços","/#prezzi"],["Trending","/trending"],["Guias","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
-  DE:  [["Features","/#features"],["So funktioniert es","/#come-funziona"],["Preise","/#prezzi"],["Trending","/trending"],["Guides","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
+  IT: [["Features","/#features"],["Come funziona","/#come-funziona"],["Prezzi","/#prezzi"],["Trending","/trending"],["Guide","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
+  EN: [["Features","/#features"],["How it works","/#come-funziona"],["Pricing","/#prezzi"],["Trending","/trending"],["Guides","/guides"],["AI Meme","/ai-meme"],["AI Website","/ai-website"]],
 };
 
 const LAUNCH: Record<Lang, string> = {
-  IT: "Lancia App", EN: "Launch App", ES: "Lanzar App",
-  FR: "Lancer l'App", PT: "Lançar App", DE: "App starten",
+  IT: "Lancia App",
+  EN: "Launch App",
 };
 
 const LANG_LABELS: Record<Lang, string> = {
-  IT: "🇮🇹 IT", EN: "🇬🇧 EN", ES: "🇪🇸 ES",
-  FR: "🇫🇷 FR", PT: "🇧🇷 PT", DE: "🇩🇪 DE",
+  IT: "🇮🇹 IT",
+  EN: "🇬🇧 EN",
 };
 
 function Logo({ size = 34 }: { size?: number }) {
@@ -45,15 +41,11 @@ export default function SiteNavbar() {
 
   useEffect(() => {
     const stored = localStorage.getItem("solmint-lang") as Lang | null;
-    if (stored && stored in LANG_LABELS) { setLang(stored); }
-    else {
+    if (stored === "IT" || stored === "EN") {
+      setLang(stored);
+    } else {
       const browser = navigator.language.slice(0, 2).toUpperCase();
-      if (browser === "IT") setLang("IT");
-      else if (browser === "ES") setLang("ES");
-      else if (browser === "FR") setLang("FR");
-      else if (browser === "PT") setLang("PT");
-      else if (browser === "DE") setLang("DE");
-      else setLang("EN");
+      setLang(browser === "IT" ? "IT" : "EN");
     }
     const handler = (e: any) => setLang(e.detail as Lang);
     window.addEventListener("solmint-lang", handler);
@@ -63,6 +55,7 @@ export default function SiteNavbar() {
   function changeLang(l: Lang) {
     setLang(l);
     localStorage.setItem("solmint-lang", l);
+    window.dispatchEvent(new CustomEvent("solmint-lang", { detail: l }));
   }
 
   useEffect(() => {

@@ -1,32 +1,79 @@
 "use client";
 
-type Lang = "IT" | "EN";
+import { useLang } from "@/lib/useLang";
 
 const TEXT = {
   IT: {
     brandSub: "Solana Token Launcher",
-    footerDesc:
-      "Crea token SPL, prepara il lancio con strumenti AI e gestisci la liquidità in modo non-custodial su Solana.",
-    product: "Product",
-    resources: "Resources",
+    footerDesc: "Crea token SPL, prepara il lancio con strumenti AI e gestisci la liquidità in modo non-custodial su Solana.",
+    product: "Prodotto",
+    resources: "Risorse",
+    contact: "Contatto",
     support: "Supporto",
     privacy: "Privacy",
     terms: "Termini",
     rights: "Tutti i diritti riservati.",
     built: "Costruito su Solana.",
   },
-
   EN: {
     brandSub: "Solana Token Launcher",
-    footerDesc:
-      "Create SPL tokens, prepare launches with AI tools and manage liquidity in a fully non-custodial way on Solana.",
+    footerDesc: "Create SPL tokens, prepare launches with AI tools and manage liquidity in a fully non-custodial way on Solana.",
     product: "Product",
     resources: "Resources",
+    contact: "Contact",
     support: "Support",
     privacy: "Privacy",
     terms: "Terms",
     rights: "All rights reserved.",
     built: "Built on Solana.",
+  },
+  ES: {
+    brandSub: "Solana Token Launcher",
+    footerDesc: "Crea tokens SPL, prepara el lanzamiento con herramientas de IA y gestiona la liquidez de forma no custodial en Solana.",
+    product: "Producto",
+    resources: "Recursos",
+    contact: "Contacto",
+    support: "Soporte",
+    privacy: "Privacidad",
+    terms: "Términos",
+    rights: "Todos los derechos reservados.",
+    built: "Construido en Solana.",
+  },
+  FR: {
+    brandSub: "Solana Token Launcher",
+    footerDesc: "Créez des tokens SPL, préparez les lancements avec des outils IA et gérez la liquidité de manière non-custodiale sur Solana.",
+    product: "Produit",
+    resources: "Ressources",
+    contact: "Contact",
+    support: "Support",
+    privacy: "Confidentialité",
+    terms: "Conditions",
+    rights: "Tous droits réservés.",
+    built: "Construit sur Solana.",
+  },
+  PT: {
+    brandSub: "Solana Token Launcher",
+    footerDesc: "Crie tokens SPL, prepare lançamentos com ferramentas de IA e gerencie liquidez de forma não custodial na Solana.",
+    product: "Produto",
+    resources: "Recursos",
+    contact: "Contato",
+    support: "Suporte",
+    privacy: "Privacidade",
+    terms: "Termos",
+    rights: "Todos os direitos reservados.",
+    built: "Construído na Solana.",
+  },
+  DE: {
+    brandSub: "Solana Token Launcher",
+    footerDesc: "Erstelle SPL-Tokens, bereite Launches mit KI-Tools vor und verwalte Liquidität nicht-custodial auf Solana.",
+    product: "Produkt",
+    resources: "Ressourcen",
+    contact: "Kontakt",
+    support: "Support",
+    privacy: "Datenschutz",
+    terms: "Nutzungsbedingungen",
+    rights: "Alle Rechte vorbehalten.",
+    built: "Gebaut auf Solana.",
   },
 };
 
@@ -35,12 +82,7 @@ function Logo({ size = 34 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
       <rect width="32" height="32" rx="9" fill="url(#footerLogo)" />
       <circle cx="16" cy="16" r="6" stroke="white" strokeWidth="2" fill="none" />
-      <path
-        d="M16 10V8M16 24v-2M10 16H8M24 16h-2"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+      <path d="M16 10V8M16 24v-2M10 16H8M24 16h-2" stroke="white" strokeWidth="2" strokeLinecap="round" />
       <defs>
         <linearGradient id="footerLogo" x1="0" y1="0" x2="32" y2="32">
           <stop stopColor="#9945FF" />
@@ -51,16 +93,14 @@ function Logo({ size = 34 }: { size?: number }) {
   );
 }
 
-export default function SiteFooter({ lang = "IT" }: { lang?: Lang }) {
-  const t = TEXT[lang];
+export default function SiteFooter() {
+  const [lang] = useLang();
+  const t = TEXT[lang] ?? TEXT["EN"];
 
   return (
     <footer
       className="relative px-4 sm:px-6 py-16"
-      style={{
-        zIndex: 1,
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-      }}
+      style={{ zIndex: 1, borderTop: "1px solid rgba(255,255,255,0.06)" }}
     >
       <div className="max-w-6xl mx-auto">
         <div
@@ -75,25 +115,15 @@ export default function SiteFooter({ lang = "IT" }: { lang?: Lang }) {
             <div>
               <div className="flex items-center gap-3 mb-5">
                 <Logo size={34} />
-
                 <div>
-                  <div className="font-black text-white text-lg">
-                    SolMint Space
-                  </div>
-
-                  <div
-                    className="text-xs font-bold uppercase tracking-[0.22em]"
-                    style={{ color: "rgba(255,255,255,0.25)" }}
-                  >
+                  <div className="font-black text-white text-lg">SolMint Space</div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: "rgba(255,255,255,0.25)" }}>
                     {t.brandSub}
                   </div>
                 </div>
               </div>
 
-              <p
-                className="text-sm leading-relaxed max-w-sm"
-                style={{ color: "rgba(255,255,255,0.42)" }}
-              >
+              <p className="text-sm leading-relaxed max-w-sm" style={{ color: "rgba(255,255,255,0.42)" }}>
                 {t.footerDesc}
               </p>
 
@@ -102,11 +132,7 @@ export default function SiteFooter({ lang = "IT" }: { lang?: Lang }) {
                   <span
                     key={item}
                     className="text-xs font-bold px-3 py-1.5 rounded-full"
-                    style={{
-                      color: "rgba(255,255,255,0.62)",
-                      background: "rgba(255,255,255,0.045)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                    }}
+                    style={{ color: "rgba(255,255,255,0.62)", background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.08)" }}
                   >
                     {item}
                   </span>
@@ -115,82 +141,29 @@ export default function SiteFooter({ lang = "IT" }: { lang?: Lang }) {
             </div>
 
             <div>
-              <h3 className="text-sm font-black mb-4 text-white">
-                {t.product}
-              </h3>
-
+              <h3 className="text-sm font-black mb-4 text-white">{t.product}</h3>
               <div className="grid gap-3">
-                <a
-                  href="/trending"
-                  className="text-sm"
-                  style={{ color: "rgba(255,255,255,0.36)" }}
-                >
-                  Trending
-                </a>
-
-                <a
-                  href="/ai-meme"
-                  className="text-sm"
-                  style={{ color: "rgba(255,255,255,0.36)" }}
-                >
-                  AI Meme
-                </a>
-
-                <a
-                  href="/guides"
-                  className="text-sm"
-                  style={{ color: "rgba(255,255,255,0.36)" }}
-                >
-                  Guides
-                </a>
+                <a href="/trending" className="text-sm" style={{ color: "rgba(255,255,255,0.36)" }}>Trending</a>
+                <a href="/ai-meme" className="text-sm" style={{ color: "rgba(255,255,255,0.36)" }}>AI Meme</a>
+                <a href="/guides" className="text-sm" style={{ color: "rgba(255,255,255,0.36)" }}>Guides</a>
               </div>
             </div>
 
             <div>
-              <h3 className="text-sm font-black mb-4 text-white">
-                {t.resources}
-              </h3>
-
+              <h3 className="text-sm font-black mb-4 text-white">{t.resources}</h3>
               <div className="grid gap-3">
-                <a
-                  href="/privacy"
-                  className="text-sm"
-                  style={{ color: "rgba(255,255,255,0.36)" }}
-                >
-                  {t.privacy}
-                </a>
-
-                <a
-                  href="/terms"
-                  className="text-sm"
-                  style={{ color: "rgba(255,255,255,0.36)" }}
-                >
-                  {t.terms}
-                </a>
-
-                <a
-                  href="mailto:info@solmint.space"
-                  className="text-sm"
-                  style={{ color: "rgba(255,255,255,0.36)" }}
-                >
-                  {t.support}
-                </a>
+                <a href="/privacy" className="text-sm" style={{ color: "rgba(255,255,255,0.36)" }}>{t.privacy}</a>
+                <a href="/terms" className="text-sm" style={{ color: "rgba(255,255,255,0.36)" }}>{t.terms}</a>
+                <a href="mailto:info@solmint.space" className="text-sm" style={{ color: "rgba(255,255,255,0.36)" }}>{t.support}</a>
               </div>
             </div>
 
             <div>
-              <h3 className="text-sm font-black mb-4 text-white">
-                Contact
-              </h3>
-
+              <h3 className="text-sm font-black mb-4 text-white">{t.contact}</h3>
               <a
                 href="mailto:info@solmint.space"
                 className="inline-flex items-center gap-2 text-sm font-bold px-4 py-3 rounded-2xl transition-all hover:scale-105"
-                style={{
-                  color: "#14F195",
-                  background: "rgba(20,241,149,0.06)",
-                  border: "1px solid rgba(20,241,149,0.16)",
-                }}
+                style={{ color: "#14F195", background: "rgba(20,241,149,0.06)", border: "1px solid rgba(20,241,149,0.16)" }}
               >
                 info@solmint.space <span>→</span>
               </a>
@@ -199,15 +172,9 @@ export default function SiteFooter({ lang = "IT" }: { lang?: Lang }) {
 
           <div
             className="mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs"
-            style={{
-              color: "rgba(255,255,255,0.16)",
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-            }}
+            style={{ color: "rgba(255,255,255,0.16)", borderTop: "1px solid rgba(255,255,255,0.06)" }}
           >
-            <span>
-              © 2026 SolMint Space. {t.rights}
-            </span>
-
+            <span>© 2026 SolMint Space. {t.rights}</span>
             <span>{t.built}</span>
           </div>
         </div>

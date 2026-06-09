@@ -6,6 +6,7 @@ import PremiumBackground from "@/components/PremiumBackground";
 import SiteNavbar from "@/components/SiteNavbar";
 import SiteFooter from "@/components/SiteFooter";
 import { GUIDES, type Guide } from "@/data/guides";
+import { getGuideTitle, getGuideDesc, getGuideContent, type GuideLang } from "@/data/guidesI18n";
 import { useLang } from "@/lib/useLang";
 
 const GT = {
@@ -23,6 +24,7 @@ const GT = {
     ready: "Pronto a creare il tuo token?",
     readyDesc: "Metti in pratica quello che hai imparato. Crea il token, cura i metadata e prepara il lancio.",
     readyBtn: "Lancia il tuo token",
+    cats: { Basics: "Basi", Tutorial: "Tutorial", Sicurezza: "Sicurezza", Marketing: "Marketing", Strategia: "Strategia", Educazione: "Educazione" },
   },
   EN: {
     badge: "Solana Guides",
@@ -38,6 +40,7 @@ const GT = {
     ready: "Ready to create your token?",
     readyDesc: "Put what you've learned into practice. Create the token, manage the metadata and prepare the launch.",
     readyBtn: "Launch your token",
+    cats: { Basics: "Basics", Tutorial: "Tutorial", Sicurezza: "Security", Marketing: "Marketing", Strategia: "Strategy", Educazione: "Education" },
   },
   ES: {
     badge: "Solana Guides",
@@ -53,6 +56,7 @@ const GT = {
     ready: "¿Listo para crear tu token?",
     readyDesc: "Pon en práctica lo que aprendiste. Crea el token, gestiona los metadatos y prepara el lanzamiento.",
     readyBtn: "Lanzar tu token",
+    cats: { Basics: "Básicos", Tutorial: "Tutorial", Sicurezza: "Seguridad", Marketing: "Marketing", Strategia: "Estrategia", Educazione: "Educación" },
   },
   FR: {
     badge: "Solana Guides",
@@ -68,6 +72,7 @@ const GT = {
     ready: "Prêt à créer votre token?",
     readyDesc: "Mettez en pratique ce que vous avez appris. Créez le token, gérez les métadonnées et préparez le lancement.",
     readyBtn: "Lancer votre token",
+    cats: { Basics: "Bases", Tutorial: "Tutoriel", Sicurezza: "Sécurité", Marketing: "Marketing", Strategia: "Stratégie", Educazione: "Éducation" },
   },
   PT: {
     badge: "Solana Guides",
@@ -83,6 +88,7 @@ const GT = {
     ready: "Pronto para criar seu token?",
     readyDesc: "Coloque em prática o que aprendeu. Crie o token, gerencie os metadados e prepare o lançamento.",
     readyBtn: "Lançar seu token",
+    cats: { Basics: "Básico", Tutorial: "Tutorial", Sicurezza: "Segurança", Marketing: "Marketing", Strategia: "Estratégia", Educazione: "Educação" },
   },
   DE: {
     badge: "Solana Guides",
@@ -98,17 +104,20 @@ const GT = {
     ready: "Bereit, deinen Token zu erstellen?",
     readyDesc: "Setze das Gelernte in die Praxis um. Erstelle den Token, verwalte die Metadaten und bereite den Launch vor.",
     readyBtn: "Token launchen",
+    cats: { Basics: "Grundlagen", Tutorial: "Tutorial", Sicurezza: "Sicherheit", Marketing: "Marketing", Strategia: "Strategie", Educazione: "Bildung" },
   },
 } as const;
+
+const CAT_KEYS = ["Basics", "Tutorial", "Sicurezza", "Marketing", "Strategia", "Educazione"] as const;
+type CatKey = typeof CAT_KEYS[number];
 
 export default function GuidesPage() {
   const [lang] = useLang();
   const t = GT[lang] ?? GT["EN"];
-  const CATEGORIES = [t.allCat, "Basics", "Tutorial", "Sicurezza", "Marketing", "Strategia", "Educazione"];
 
   const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>(t.allCat);
+  const [category, setCategory] = useState<CatKey | "">("");
 
   const catColors: Record<string, string> = {
     Basics: "#9945FF",
@@ -123,17 +132,19 @@ export default function GuidesPage() {
     const query = search.toLowerCase().trim();
 
     return GUIDES.filter(g => {
+      const title = getGuideTitle(g.id, lang as GuideLang).toLowerCase();
+      const desc = getGuideDesc(g.id, lang as GuideLang).toLowerCase();
       const matchSearch =
         !query ||
-        g.title.toLowerCase().includes(query) ||
-        g.desc.toLowerCase().includes(query) ||
+        title.includes(query) ||
+        desc.includes(query) ||
         g.category.toLowerCase().includes(query);
 
-      const matchCat = category === t.allCat || g.category === category;
+      const matchCat = category === "" || g.category === category;
 
       return matchSearch && matchCat;
     });
-  }, [search, category, t.allCat]);
+  }, [search, category, lang]);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -168,8 +179,9 @@ export default function GuidesPage() {
 
   const renderContent = (guide: Guide) => {
     const color = catColors[guide.category] || "#9945FF";
+    const localizedContent = getGuideContent(guide.id, lang as GuideLang, guide.content);
 
-    return guide.content.trim().split("\n").map((line, i) => {
+    return localizedContent.trim().split("\n").map((line, i) => {
       if (line.startsWith("## ") || line.startsWith("### ") || line.startsWith("#### ")) {
         const level = line.startsWith("#### ") ? 4 : line.startsWith("### ") ? 3 : 2;
         const title = line.replace(/^#### /, "").replace(/^### /, "").replace(/^## /, "");
@@ -273,15 +285,15 @@ export default function GuidesPage() {
           <article>
             <header style={{ marginBottom: 32 }}>
               <span style={{ fontSize: 12, fontWeight: 800, color: catColors[selectedGuide.category] || "#9945FF", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, display: "block" }}>
-                {selectedGuide.category}
+                {t.cats[selectedGuide.category as CatKey] ?? selectedGuide.category}
               </span>
 
               <h1 style={{ fontSize: "clamp(30px, 5vw, 52px)", fontWeight: 950, letterSpacing: "-0.045em", marginBottom: 16, lineHeight: 1.05 }}>
-                {selectedGuide.icon} {selectedGuide.title}
+                {selectedGuide.icon} {getGuideTitle(selectedGuide.id, lang as GuideLang)}
               </h1>
 
               <p style={{ color: "rgba(255,255,255,0.48)", fontSize: 17, lineHeight: 1.7, marginBottom: 16 }}>
-                {selectedGuide.desc}
+                {getGuideDesc(selectedGuide.id, lang as GuideLang)}
               </p>
 
               <div style={{ display: "flex", gap: 16, color: "rgba(255,255,255,0.35)", fontSize: 13 }}>
@@ -358,7 +370,23 @@ export default function GuidesPage() {
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 40, justifyContent: "center" }}>
-          {CATEGORIES.map(cat => (
+          <button
+            onClick={() => setCategory("")}
+            style={{
+              padding: "8px 18px",
+              borderRadius: 100,
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 800,
+              transition: "all 0.15s",
+              background: category === "" ? "linear-gradient(135deg, #9945FF, #14F195)" : "rgba(255,255,255,0.05)",
+              color: category === "" ? "white" : "rgba(255,255,255,0.5)",
+              border: category === "" ? "none" : "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            {t.allCat}
+          </button>
+          {CAT_KEYS.map(cat => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
@@ -374,7 +402,7 @@ export default function GuidesPage() {
                 border: category === cat ? "none" : "1px solid rgba(255,255,255,0.08)",
               }}
             >
-              {cat}
+              {t.cats[cat]}
             </button>
           ))}
         </div>
@@ -413,16 +441,16 @@ export default function GuidesPage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
                 <span style={{ fontSize: 32 }}>{guide.icon}</span>
                 <span style={{ fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 100, background: "rgba(153,69,255,0.12)", color: catColors[guide.category] || "#9945FF", border: "1px solid rgba(153,69,255,0.22)" }}>
-                  {guide.category}
+                  {t.cats[guide.category as CatKey] ?? guide.category}
                 </span>
               </div>
 
               <h3 style={{ fontSize: 19, fontWeight: 900, color: "white", marginBottom: 10, letterSpacing: "-0.025em", lineHeight: 1.25 }}>
-                {guide.title}
+                {getGuideTitle(guide.id, lang as GuideLang)}
               </h3>
 
               <p style={{ fontSize: 14, color: "rgba(255,255,255,0.42)", lineHeight: 1.65, marginBottom: 22 }}>
-                {guide.desc}
+                {getGuideDesc(guide.id, lang as GuideLang)}
               </p>
 
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto" }}>

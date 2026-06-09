@@ -7,13 +7,14 @@ import TokenForm from "@/components/TokenForm";
 import LiquidityPool from "@/components/LiquidityPool";
 import SiteNavbar from "@/components/SiteNavbar";
 import { GUIDES } from "@/data/guides";
+import { getGuideTitle, getGuideDesc, type GuideLang } from "@/data/guidesI18n";
 
 const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((m) => m.WalletMultiButton),
   { ssr: false }
 );
 
-type Lang = "IT" | "EN" | "ES" | "FR" | "PT" | "DE";
+type Lang = "IT" | "EN";
 type NavLink = [string, string];
 
 const NAV_LINKS: Record<Lang, NavLink[]> = {
@@ -30,42 +31,6 @@ const NAV_LINKS: Record<Lang, NavLink[]> = {
     ["Features", "#features"],
     ["How it works", "#come-funziona"],
     ["Pricing", "#prezzi"],
-    ["FAQ", "#faq"],
-    ["Trending", "/trending"],
-    ["Guides", "/guides"],
-    ["AI Website", "/ai-website"],
-  ],
-  ES: [
-    ["Características", "#features"],
-    ["Cómo funciona", "#come-funziona"],
-    ["Precios", "#prezzi"],
-    ["FAQ", "#faq"],
-    ["Trending", "/trending"],
-    ["Guías", "/guides"],
-    ["AI Website", "/ai-website"],
-  ],
-  FR: [
-    ["Fonctionnalités", "#features"],
-    ["Comment ça marche", "#come-funziona"],
-    ["Tarifs", "#prezzi"],
-    ["FAQ", "#faq"],
-    ["Tendances", "/trending"],
-    ["Guides", "/guides"],
-    ["AI Website", "/ai-website"],
-  ],
-  PT: [
-    ["Recursos", "#features"],
-    ["Como funciona", "#come-funziona"],
-    ["Preços", "#prezzi"],
-    ["FAQ", "#faq"],
-    ["Trending", "/trending"],
-    ["Guias", "/guides"],
-    ["AI Website", "/ai-website"],
-  ],
-  DE: [
-    ["Features", "#features"],
-    ["So funktioniert es", "#come-funziona"],
-    ["Preise", "#prezzi"],
     ["FAQ", "#faq"],
     ["Trending", "/trending"],
     ["Guides", "/guides"],
@@ -259,299 +224,7 @@ const TEXT: Record<Lang, Record<string, string>> = {
     rights: "All rights reserved.",
     built: "Built on Solana.",
   },
-
-  ES: {
-    brandSub: "Lanzador de Tokens Solana",
-    launchApp: "Lanzar App",
-    mainnet: "Mainnet",
-    createTab: "Crear Token",
-    poolTab: "Liquidity Pool",
-    appFooter: "SolMint Space — Lanzador de Tokens sin Custodia en Solana",
-    heroBadge: "Sin custodia · Trustless · Con IA",
-    hero1: "La forma más fácil",
-    hero2: "de lanzar",
-    hero3: "en Solana.",
-    heroDesc: "Crea tokens SPL profesionales en 60 segundos. Usa tendencias, IA y herramientas de lanzamiento para convertir una narrativa en un proyecto real.",
-    createToken: "Crear tu token",
-    howItWorks: "Cómo funciona",
-    generateAI: "Generar idea IA",
-    generateWebsite: "Generar sitio coin",
-    heroNote: "Sin registro. Conecta tu wallet, encuentra una tendencia y empieza.",
-    trusted: "Trusted by creators",
-    statTokens: "Tokens creados",
-    statCreators: "Creadores activos",
-    statSolana: "Blockchain",
-    statUptime: "Uptime",
-    aiBadge: "Trending + AI Meme",
-    aiTitle1: "No lances al azar.",
-    aiTitle2: "Lanza con la narrativa correcta.",
-    aiDesc: "SolMint te ayuda a descubrir tendencias, generar ideas memecoin y pasar de concepto a token live en minutos.",
-    websiteBadge: "Nueva función",
-    websiteTitle1: "Crea también el sitio",
-    websiteTitle2: "para tu coin.",
-    websiteDesc: "Después del token, genera una landing page profesional: hero, tokenomics, roadmap, community, FAQ y links sociales.",
-    websitePrice: "0.2 SOL",
-    websiteCta: "Crear sitio IA",
-    builtOn: "Construido en el mejor ecosistema",
-    featuresBadge: "Características",
-    featuresTitle1: "Todo lo que",
-    featuresTitle2: "necesitas.",
-    featuresDesc: "Una plataforma completa para crear tokens profesionales en Solana.",
-    howBadge: "Cómo funciona",
-    howTitle1: "Cuatro pasos.",
-    howTitle2: "Token live.",
-    guidesBadge: "Guías",
-    guidesTitle: "Aprende Solana sin perder semanas",
-    guidesDesc: "Guías prácticas sobre tokens SPL, pools de liquidez, branding, authority y lanzamientos memecoin.",
-    guidesAll: "Ver todas las guías",
-    compareBadge: "Comparación",
-    compareTitle: "¿Por qué usar SolMint?",
-    compareDesc: "Creación profesional de tokens sin código, sin caos y sin herramientas dispersas.",
-    compareCta: "Empezar ahora",
-    pricingBadge: "Precios",
-    pricingTitle1: "Transparentes.",
-    pricingTitle2: "Definitivos.",
-    pricingDesc: "Pagas una vez. Sin suscripciones. Sin sorpresas.",
-    fee: "+ fee de red (~0.01 SOL)",
-    startNow: "Empezar ahora",
-    reviewsBadge: "Reseñas",
-    reviewsTitle: "Creado para lanzamientos serios.",
-    reviewsDesc: "Un flujo más claro para creadores, builders y fundadores de comunidad.",
-    faqBadge: "FAQ",
-    faqTitle: "¿Preguntas?",
-    ctaTitle1: "¿Listo",
-    ctaTitle2: "para lanzar?",
-    ctaDesc: "Crea el token, genera la narrativa, prepara el sitio y lleva el proyecto a Solana.",
-    starterNote: "Plan Starter desde 0.1 SOL + fee de red",
-    footerDesc: "Crea tokens SPL, prepara lanzamientos con herramientas IA y gestiona liquidez sin custodia en Solana.",
-    product: "Producto",
-    resources: "Recursos",
-    support: "Soporte",
-    privacy: "Privacidad",
-    terms: "Términos",
-    rights: "Todos los derechos reservados.",
-    built: "Construido en Solana.",
-  },
-
-  FR: {
-    brandSub: "Lanceur de Tokens Solana",
-    launchApp: "Lancer l'App",
-    mainnet: "Mainnet",
-    createTab: "Créer Token",
-    poolTab: "Liquidity Pool",
-    appFooter: "SolMint Space — Lanceur de Tokens sans Garde sur Solana",
-    heroBadge: "Sans garde · Trustless · Propulsé par IA",
-    hero1: "La façon la plus simple",
-    hero2: "de lancer",
-    hero3: "sur Solana.",
-    heroDesc: "Créez des tokens SPL professionnels en 60 secondes. Utilisez les tendances Solana et l'AI Meme Generator pour trouver le bon narratif avant de lancer.",
-    createToken: "Créer votre token",
-    howItWorks: "Comment ça marche",
-    generateAI: "Générer une idée IA",
-    generateWebsite: "Générer site coin",
-    heroNote: "Pas d'inscription. Connectez votre wallet, trouvez une tendance et lancez.",
-    trusted: "Trusted by creators",
-    statTokens: "Tokens créés",
-    statCreators: "Créateurs actifs",
-    statSolana: "Blockchain",
-    statUptime: "Uptime",
-    aiBadge: "Trending + AI Meme",
-    aiTitle1: "Ne lancez pas au hasard.",
-    aiTitle2: "Lancez avec le bon narratif.",
-    aiDesc: "SolMint vous aide à découvrir les tendances, générer des idées memecoin et passer du concept au token live en quelques minutes.",
-    websiteBadge: "Nouvelle fonctionnalité",
-    websiteTitle1: "Créez aussi le site",
-    websiteTitle2: "pour votre coin.",
-    websiteDesc: "Après le token, générez une landing page professionnelle: hero, tokenomics, roadmap, community, FAQ et liens sociaux.",
-    websitePrice: "0.2 SOL",
-    websiteCta: "Créer site IA",
-    builtOn: "Construit sur le meilleur écosystème",
-    featuresBadge: "Fonctionnalités",
-    featuresTitle1: "Tout ce dont",
-    featuresTitle2: "vous avez besoin.",
-    featuresDesc: "Une plateforme complète pour créer des tokens professionnels sur Solana.",
-    howBadge: "Comment ça marche",
-    howTitle1: "Quatre étapes.",
-    howTitle2: "Token live.",
-    guidesBadge: "Guides",
-    guidesTitle: "Apprenez Solana sans perdre des semaines",
-    guidesDesc: "Guides pratiques sur les tokens SPL, pools de liquidité, branding, authority et lancements memecoin.",
-    guidesAll: "Voir tous les guides",
-    compareBadge: "Comparaison",
-    compareTitle: "Pourquoi utiliser SolMint?",
-    compareDesc: "Création professionnelle de tokens sans code, sans chaos et sans outils éparpillés.",
-    compareCta: "Commencer maintenant",
-    pricingBadge: "Tarifs",
-    pricingTitle1: "Transparents.",
-    pricingTitle2: "Définitifs.",
-    pricingDesc: "Vous payez une fois. Sans abonnement. Sans surprise.",
-    fee: "+ frais réseau (~0.01 SOL)",
-    startNow: "Commencer maintenant",
-    reviewsBadge: "Avis",
-    reviewsTitle: "Conçu pour les lancements sérieux.",
-    reviewsDesc: "Un flux plus clair pour les créateurs, builders et fondateurs de communauté.",
-    faqBadge: "FAQ",
-    faqTitle: "Des questions?",
-    ctaTitle1: "Prêt",
-    ctaTitle2: "à lancer?",
-    ctaDesc: "Créez le token, générez le narratif, préparez le site et portez votre projet sur Solana.",
-    starterNote: "Plan Starter à partir de 0.1 SOL + frais réseau",
-    footerDesc: "Créez des tokens SPL, préparez des lancements avec des outils IA et gérez la liquidité sans garde sur Solana.",
-    product: "Produit",
-    resources: "Ressources",
-    support: "Support",
-    privacy: "Confidentialité",
-    terms: "Conditions",
-    rights: "Tous droits réservés.",
-    built: "Construit sur Solana.",
-  },
-
-  PT: {
-    brandSub: "Lançador de Tokens Solana",
-    launchApp: "Lançar App",
-    mainnet: "Mainnet",
-    createTab: "Criar Token",
-    poolTab: "Liquidity Pool",
-    appFooter: "SolMint Space — Lançador de Tokens sem Custódia na Solana",
-    heroBadge: "Sem custódia · Trustless · Com IA",
-    hero1: "A forma mais fácil",
-    hero2: "de lançar",
-    hero3: "na Solana.",
-    heroDesc: "Crie tokens SPL profissionais em 60 segundos. Use tendências Solana e o AI Meme Generator para encontrar a narrativa certa antes de lançar.",
-    createToken: "Criar seu token",
-    howItWorks: "Como funciona",
-    generateAI: "Gerar ideia IA",
-    generateWebsite: "Gerar site da coin",
-    heroNote: "Sem cadastro. Conecte sua carteira, encontre uma tendência e comece.",
-    trusted: "Trusted by creators",
-    statTokens: "Tokens criados",
-    statCreators: "Criadores ativos",
-    statSolana: "Blockchain",
-    statUptime: "Uptime",
-    aiBadge: "Trending + AI Meme",
-    aiTitle1: "Não lance ao acaso.",
-    aiTitle2: "Lance com a narrativa certa.",
-    aiDesc: "SolMint ajuda você a descobrir tendências, gerar ideias memecoin e passar do conceito ao token live em minutos.",
-    websiteBadge: "Nova função",
-    websiteTitle1: "Crie também o site",
-    websiteTitle2: "para sua coin.",
-    websiteDesc: "Após o token, gere uma landing page profissional: hero, tokenomics, roadmap, community, FAQ e links sociais.",
-    websitePrice: "0.2 SOL",
-    websiteCta: "Criar site IA",
-    builtOn: "Construído no melhor ecossistema",
-    featuresBadge: "Recursos",
-    featuresTitle1: "Tudo o que",
-    featuresTitle2: "você precisa.",
-    featuresDesc: "Uma plataforma completa para criar tokens profissionais na Solana.",
-    howBadge: "Como funciona",
-    howTitle1: "Quatro passos.",
-    howTitle2: "Token live.",
-    guidesBadge: "Guias",
-    guidesTitle: "Aprenda Solana sem perder semanas",
-    guidesDesc: "Guias práticos sobre tokens SPL, pools de liquidez, branding, authority e lançamentos memecoin.",
-    guidesAll: "Ver todos os guias",
-    compareBadge: "Comparação",
-    compareTitle: "Por que usar SolMint?",
-    compareDesc: "Criação profissional de tokens sem código, sem caos e sem ferramentas dispersas.",
-    compareCta: "Começar agora",
-    pricingBadge: "Preços",
-    pricingTitle1: "Transparentes.",
-    pricingTitle2: "Definitivos.",
-    pricingDesc: "Você paga uma vez. Sem assinatura. Sem surpresas.",
-    fee: "+ taxa de rede (~0.01 SOL)",
-    startNow: "Começar agora",
-    reviewsBadge: "Avaliações",
-    reviewsTitle: "Criado para lançamentos sérios.",
-    reviewsDesc: "Um fluxo mais claro para criadores, builders e fundadores de comunidade.",
-    faqBadge: "FAQ",
-    faqTitle: "Tem perguntas?",
-    ctaTitle1: "Pronto",
-    ctaTitle2: "para lançar?",
-    ctaDesc: "Crie o token, gere a narrativa, prepare o site e leve seu projeto à Solana.",
-    starterNote: "Plano Starter a partir de 0.1 SOL + taxa de rede",
-    footerDesc: "Crie tokens SPL, prepare lançamentos com ferramentas de IA e gerencie liquidez sem custódia na Solana.",
-    product: "Produto",
-    resources: "Recursos",
-    support: "Suporte",
-    privacy: "Privacidade",
-    terms: "Termos",
-    rights: "Todos os direitos reservados.",
-    built: "Construído na Solana.",
-  },
-
-  DE: {
-    brandSub: "Solana Token Launcher",
-    launchApp: "App starten",
-    mainnet: "Mainnet",
-    createTab: "Token erstellen",
-    poolTab: "Liquidity Pool",
-    appFooter: "SolMint Space — Nicht-verwahrender Token Launcher auf Solana",
-    heroBadge: "Trustless · Nicht-verwahrend · KI-gestützt",
-    hero1: "Der einfachste Weg",
-    hero2: "zum Launch",
-    hero3: "auf Solana.",
-    heroDesc: "Erstelle professionelle SPL-Token in 60 Sekunden. Nutze Solana-Trends und den AI Meme Generator, um die richtige Narrative vor dem Launch zu finden.",
-    createToken: "Token erstellen",
-    howItWorks: "So funktioniert es",
-    generateAI: "KI-Idee generieren",
-    generateWebsite: "Coin-Website generieren",
-    heroNote: "Keine Registrierung. Wallet verbinden, Trend finden und starten.",
-    trusted: "Trusted by creators",
-    statTokens: "Erstellte Token",
-    statCreators: "Aktive Ersteller",
-    statSolana: "Blockchain",
-    statUptime: "Uptime",
-    aiBadge: "Trending + AI Meme",
-    aiTitle1: "Nicht zufällig launchen.",
-    aiTitle2: "Mit der richtigen Narrative launchen.",
-    aiDesc: "SolMint hilft dir, Trends zu entdecken, Memecoin-Ideen zu generieren und in Minuten vom Konzept zum Live-Token zu gelangen.",
-    websiteBadge: "Neues Feature",
-    websiteTitle1: "Erstelle auch die Website",
-    websiteTitle2: "für deine Coin.",
-    websiteDesc: "Nach dem Token generierst du eine professionelle Landing Page: Hero, Tokenomics, Roadmap, Community, FAQ und Social Links.",
-    websitePrice: "0.2 SOL",
-    websiteCta: "KI-Website erstellen",
-    builtOn: "Gebaut auf dem besten Ökosystem",
-    featuresBadge: "Features",
-    featuresTitle1: "Alles was",
-    featuresTitle2: "du brauchst.",
-    featuresDesc: "Eine vollständige Plattform zur Erstellung professioneller Token auf Solana.",
-    howBadge: "So funktioniert es",
-    howTitle1: "Vier Schritte.",
-    howTitle2: "Token live.",
-    guidesBadge: "Guides",
-    guidesTitle: "Lerne Solana ohne wochenlange Suche",
-    guidesDesc: "Praktische Anleitungen zu SPL-Token, Liquiditätspools, Branding, Authority und Memecoin-Launches.",
-    guidesAll: "Alle Guides ansehen",
-    compareBadge: "Vergleich",
-    compareTitle: "Warum SolMint nutzen?",
-    compareDesc: "Professionelle Token-Erstellung ohne Code, ohne Chaos und ohne verteilte Tools.",
-    compareCta: "Jetzt starten",
-    pricingBadge: "Preise",
-    pricingTitle1: "Transparent.",
-    pricingTitle2: "Endgültig.",
-    pricingDesc: "Einmalig bezahlen. Kein Abonnement. Keine versteckten Kosten.",
-    fee: "+ Netzwerkgebühr (~0.01 SOL)",
-    startNow: "Jetzt starten",
-    reviewsBadge: "Bewertungen",
-    reviewsTitle: "Für ernsthafte Launches gebaut.",
-    reviewsDesc: "Ein klarerer Ablauf für Ersteller, Builder und Community-Gründer.",
-    faqBadge: "FAQ",
-    faqTitle: "Fragen?",
-    ctaTitle1: "Bereit",
-    ctaTitle2: "zum Launch?",
-    ctaDesc: "Erstelle den Token, generiere die Narrative, bereite die Website vor und bring dein Projekt auf Solana.",
-    starterNote: "Starter-Plan ab 0.1 SOL + Netzwerkgebühr",
-    footerDesc: "Erstelle SPL-Token, bereite Launches mit KI-Tools vor und verwalte Liquidität nicht-verwahrend auf Solana.",
-    product: "Produkt",
-    resources: "Ressourcen",
-    support: "Support",
-    privacy: "Datenschutz",
-    terms: "AGB",
-    rights: "Alle Rechte vorbehalten.",
-    built: "Gebaut auf Solana.",
-  },
-};
+};;
 
 const PARTNERS = ["Solana", "Metaplex", "Raydium", "Pinata", "Phantom", "Dexscreener", "Axiom", "Photon"];
 
@@ -668,14 +341,10 @@ const DATA = {
       ["Need help?", "Contact info@solmint.space — we reply within 24 hours."],
     ],
   },
-  ES: null,
-  FR: null,
-  PT: null,
-  DE: null,
 };
 
 function getdata(lang: Lang) {
-  return (DATA[lang] as typeof DATA["EN"] | null) ?? DATA["EN"];
+  return DATA[lang] ?? DATA["EN"];
 }
 
 function Logo({ size = 32 }: { size?: number }) {
@@ -885,12 +554,34 @@ export default function Home() {
   const [showApp, setShowApp] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [lang, setLang] = useState<Lang>("IT");
+  const [lang, setLang] = useState<Lang>("EN");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const t = useMemo(() => TEXT[lang], [lang]);
   const data = useMemo(() => getdata(lang), [lang]);
   const navLinks = useMemo(() => NAV_LINKS[lang], [lang]);
+
+  // Sync with shared localStorage lang (same key as useLang hook)
+  useEffect(() => {
+    const stored = localStorage.getItem("solmint-lang") as Lang | null;
+    if (stored === "IT" || stored === "EN") setLang(stored);
+    else {
+      const browser = navigator.language.slice(0, 2).toUpperCase();
+      setLang(browser === "IT" ? "IT" : "EN");
+    }
+    const handler = (e: any) => {
+      const l = e.detail as Lang;
+      if (l === "IT" || l === "EN") setLang(l);
+    };
+    window.addEventListener("solmint-lang", handler);
+    return () => window.removeEventListener("solmint-lang", handler);
+  }, []);
+
+  function changeLang(l: Lang) {
+    setLang(l);
+    localStorage.setItem("solmint-lang", l);
+    window.dispatchEvent(new CustomEvent("solmint-lang", { detail: l }));
+  }
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.search.includes("app=true")) {
@@ -1152,15 +843,12 @@ export default function Home() {
               <div style={{ position: "relative" }}>
                 <select
                   value={lang}
-                  onChange={(e) => setLang(e.target.value as Lang)}
+                  onChange={(e) => changeLang(e.target.value as Lang)}
                   className="text-xs font-black rounded-full px-3 py-2 appearance-none cursor-pointer"
                   style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "white", outline: "none" }}
                 >
-                  {(["IT", "EN", "ES", "FR", "PT", "DE"] as Lang[]).map((code) => (
-                    <option key={code} value={code} style={{ background: "#0a0a14", color: "white" }}>
-                      {code === "IT" ? "🇮🇹 IT" : code === "EN" ? "🇬🇧 EN" : code === "ES" ? "🇪🇸 ES" : code === "FR" ? "🇫🇷 FR" : code === "PT" ? "🇧🇷 PT" : "🇩🇪 DE"}
-                    </option>
-                  ))}
+                  <option value="IT" style={{ background: "#0a0a14", color: "white" }}>🇮🇹 IT</option>
+                  <option value="EN" style={{ background: "#0a0a14", color: "white" }}>🇬🇧 EN</option>
                 </select>
               </div>
 
@@ -1193,15 +881,12 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <select
                     value={lang}
-                    onChange={(e) => setLang(e.target.value as Lang)}
+                    onChange={(e) => changeLang(e.target.value as Lang)}
                     className="w-full rounded-2xl py-3 px-4 text-sm font-black appearance-none"
                     style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "white", outline: "none" }}
                   >
-                    {(["IT", "EN", "ES", "FR", "PT", "DE"] as Lang[]).map((code) => (
-                      <option key={code} value={code} style={{ background: "#0a0a14", color: "white" }}>
-                        {code === "IT" ? "🇮🇹 Italiano" : code === "EN" ? "🇬🇧 English" : code === "ES" ? "🇪🇸 Español" : code === "FR" ? "🇫🇷 Français" : code === "PT" ? "🇧🇷 Português" : "🇩🇪 Deutsch"}
-                      </option>
-                    ))}
+                    <option value="IT" style={{ background: "#0a0a14", color: "white" }}>🇮🇹 Italiano</option>
+                    <option value="EN" style={{ background: "#0a0a14", color: "white" }}>🇬🇧 English</option>
                   </select>
 
                   <button onClick={() => { setMobileMenuOpen(false); setShowApp(true); }} className="py-3 rounded-2xl text-sm font-black text-white" style={{ background: "linear-gradient(135deg, #9945FF, #14F195)" }}>
@@ -1515,16 +1200,16 @@ export default function Home() {
                     </div>
 
                     <h3 style={{ color: "white", fontSize: 20, fontWeight: 900, marginBottom: 10, lineHeight: 1.2, letterSpacing: "-0.03em" }}>
-                      {guide.title}
+                      {getGuideTitle(guide.id, lang as GuideLang)}
                     </h3>
 
                     <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
-                      {guide.desc}
+                      {getGuideDesc(guide.id, lang as GuideLang)}
                     </p>
 
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 12 }}>⏱ {guide.time}</span>
-                      <span style={{ color: "#9945FF", fontSize: 13, fontWeight: 800 }}>Leggi →</span>
+                      <span style={{ color: "#9945FF", fontSize: 13, fontWeight: 800 }}>{lang === "IT" ? "Leggi →" : "Read →"}</span>
                     </div>
                   </Link>
                 </article>

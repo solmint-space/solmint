@@ -27,11 +27,12 @@ export async function GET() {
     const terms = SEARCH_POOLS[searchRotation % SEARCH_POOLS.length];
     searchRotation++;
 
-    // Fetch TUTTI in parallelo: boosts + profiles + search terms multipli per nuovi token
+    // Fetch TUTTI in parallelo: boosts + profiles + new pairs + search terms
     const fetches = [
       fetch("https://api.dexscreener.com/token-boosts/latest/v1",   { headers: { Accept: "application/json" }, cache: "no-store" }),
       fetch("https://api.dexscreener.com/token-boosts/top/v1",      { headers: { Accept: "application/json" }, cache: "no-store" }),
       fetch("https://api.dexscreener.com/token-profiles/latest/v1", { headers: { Accept: "application/json" }, cache: "no-store" }),
+      fetch("https://api.dexscreener.com/latest/dex/pairs/solana",  { headers: { Accept: "application/json" }, cache: "no-store" }),
       ...terms.map(q =>
         fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(q)}`, { headers: { Accept: "application/json" }, cache: "no-store" })
       ),
@@ -43,9 +44,16 @@ export async function GET() {
     const boostsTop    = results[1].status === "fulfilled" && results[1].value.ok ? await results[1].value.json() : [];
     const profiles     = results[2].status === "fulfilled" && results[2].value.ok ? await results[2].value.json() : [];
 
+    // Latest pairs from Solana (for "New" tab)
+    let latestPairsData: any = {};
+    if (results[3].status === "fulfilled" && results[3].value.ok) {
+      latestPairsData = await results[3].value.json();
+    }
+    const latestPairs: any[] = (latestPairsData.pairs || []).filter((p: any) => p.chainId === "solana").slice(0, 30);
+
     // Raccoglie tutti i pairs dalle ricerche
-    let searchPairs: any[] = [];
-    for (let i = 3; i < results.length; i++) {
+    let searchPairs: any[] = [...latestPairs];
+    for (let i = 4; i < results.length; i++) {
       const r = results[i];
       if (r.status === "fulfilled" && r.value.ok) {
         const d = await r.value.json();

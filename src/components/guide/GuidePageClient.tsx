@@ -4,6 +4,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { useLang } from "@/lib/useLang";
 import type { Guide } from "@/data/guides";
+import { getGuideTitle, getGuideDesc, getGuideContent, type GuideLang } from "@/data/guidesI18n";
 
 const catColors: Record<string, string> = {
   Basics: "#9945FF",
@@ -15,12 +16,12 @@ const catColors: Record<string, string> = {
 };
 
 const T = {
-  IT: { back: "← Torna alle guide", readTime: "di lettura", related: "Guide correlate", readyCta: "Pronto a creare il tuo token?", readyDesc: "Metti in pratica quello che hai imparato. Crea il token, cura i metadata e prepara il lancio.", readyBtn: "Lancia il tuo token" },
-  EN: { back: "← Back to guides", readTime: "read", related: "Related guides", readyCta: "Ready to create your token?", readyDesc: "Put what you've learned into practice. Create the token, manage the metadata and prepare the launch.", readyBtn: "Launch your token" },
-  ES: { back: "← Volver a guías", readTime: "lectura", related: "Guías relacionadas", readyCta: "¿Listo para crear tu token?", readyDesc: "Pon en práctica lo que aprendiste. Crea el token y prepara el lanzamiento.", readyBtn: "Lanzar tu token" },
-  FR: { back: "← Retour aux guides", readTime: "de lecture", related: "Guides associés", readyCta: "Prêt à créer votre token?", readyDesc: "Mettez en pratique ce que vous avez appris. Créez le token et préparez le lancement.", readyBtn: "Lancer votre token" },
-  PT: { back: "← Voltar às guias", readTime: "leitura", related: "Guias relacionados", readyCta: "Pronto para criar seu token?", readyDesc: "Coloque em prática o que aprendeu. Crie o token e prepare o lançamento.", readyBtn: "Lançar seu token" },
-  DE: { back: "← Zurück zu Guides", readTime: "Lesezeit", related: "Verwandte Guides", readyCta: "Bereit, deinen Token zu erstellen?", readyDesc: "Setze das Gelernte in die Praxis um. Erstelle den Token und bereite den Launch vor.", readyBtn: "Token launchen" },
+  IT: { back: "← Torna alle guide", readTime: "di lettura", related: "Guide correlate", readyCta: "Pronto a creare il tuo token?", readyDesc: "Metti in pratica quello che hai imparato. Crea il token, cura i metadata e prepara il lancio.", readyBtn: "Lancia il tuo token", cats: { Basics: "Basi", Tutorial: "Tutorial", Sicurezza: "Sicurezza", Marketing: "Marketing", Strategia: "Strategia", Educazione: "Educazione" } },
+  EN: { back: "← Back to guides", readTime: "read", related: "Related guides", readyCta: "Ready to create your token?", readyDesc: "Put what you've learned into practice. Create the token, manage the metadata and prepare the launch.", readyBtn: "Launch your token", cats: { Basics: "Basics", Tutorial: "Tutorial", Sicurezza: "Security", Marketing: "Marketing", Strategia: "Strategy", Educazione: "Education" } },
+  ES: { back: "← Volver a guías", readTime: "lectura", related: "Guías relacionadas", readyCta: "¿Listo para crear tu token?", readyDesc: "Pon en práctica lo que aprendiste. Crea el token y prepara el lanzamiento.", readyBtn: "Lanzar tu token", cats: { Basics: "Básicos", Tutorial: "Tutorial", Sicurezza: "Seguridad", Marketing: "Marketing", Strategia: "Estrategia", Educazione: "Educación" } },
+  FR: { back: "← Retour aux guides", readTime: "de lecture", related: "Guides associés", readyCta: "Prêt à créer votre token?", readyDesc: "Mettez en pratique ce que vous avez appris. Créez le token et préparez le lancement.", readyBtn: "Lancer votre token", cats: { Basics: "Bases", Tutorial: "Tutoriel", Sicurezza: "Sécurité", Marketing: "Marketing", Strategia: "Stratégie", Educazione: "Éducation" } },
+  PT: { back: "← Voltar às guias", readTime: "leitura", related: "Guias relacionados", readyCta: "Pronto para criar seu token?", readyDesc: "Coloque em prática o que aprendeu. Crie o token e prepare o lançamento.", readyBtn: "Lançar seu token", cats: { Basics: "Básico", Tutorial: "Tutorial", Sicurezza: "Segurança", Marketing: "Marketing", Strategia: "Estratégia", Educazione: "Educação" } },
+  DE: { back: "← Zurück zu Guides", readTime: "Lesezeit", related: "Verwandte Guides", readyCta: "Bereit, deinen Token zu erstellen?", readyDesc: "Setze das Gelernte in die Praxis um. Erstelle den Token und bereite den Launch vor.", readyBtn: "Token launchen", cats: { Basics: "Grundlagen", Tutorial: "Tutorial", Sicurezza: "Sicherheit", Marketing: "Marketing", Strategia: "Strategie", Educazione: "Bildung" } },
 } as const;
 
 export default function GuidePageClient({ guide, related }: { guide: Guide; related: Guide[] }) {
@@ -40,13 +41,13 @@ export default function GuidePageClient({ guide, related }: { guide: Guide; rela
       <article>
         <header style={{ marginBottom: 32 }}>
           <span style={{ fontSize: 12, fontWeight: 800, color, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, display: "block" }}>
-            {guide.category}
+            {t.cats[guide.category as keyof typeof t.cats] ?? guide.category}
           </span>
           <h1 style={{ fontSize: "clamp(30px, 5vw, 52px)", fontWeight: 950, letterSpacing: "-0.045em", marginBottom: 16, lineHeight: 1.05 }}>
-            {guide.icon} {guide.title}
+            {guide.icon} {getGuideTitle(guide.id, lang as GuideLang)}
           </h1>
           <p style={{ color: "rgba(255,255,255,0.48)", fontSize: 17, lineHeight: 1.7, marginBottom: 16 }}>
-            {guide.desc}
+            {getGuideDesc(guide.id, lang as GuideLang)}
           </p>
           <div style={{ display: "flex", gap: 16, color: "rgba(255,255,255,0.35)", fontSize: 13 }}>
             <span>⏱ {guide.time} {t.readTime}</span>
@@ -54,7 +55,7 @@ export default function GuidePageClient({ guide, related }: { guide: Guide; rela
         </header>
 
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 32 }}>
-          <ReactMarkdown
+          <ReactMarkdown key={lang}
             components={{
               h2: ({ children }) => (
                 <div style={{ marginTop: 54, marginBottom: 22 }}>
@@ -88,7 +89,7 @@ export default function GuidePageClient({ guide, related }: { guide: Guide; rela
               ),
             }}
           >
-            {guide.content}
+            {getGuideContent(guide.id, lang as GuideLang, guide.content)}
           </ReactMarkdown>
         </div>
       </article>
@@ -99,8 +100,8 @@ export default function GuidePageClient({ guide, related }: { guide: Guide; rela
           <div style={{ display: "grid", gap: 12 }}>
             {related.map((item) => (
               <Link key={item.id} href={`/guides/${item.id}`} style={{ display: "block", padding: 20, borderRadius: 18, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", textDecoration: "none" }}>
-                <div style={{ color: "white", fontWeight: 900, marginBottom: 6 }}>{item.icon} {item.title}</div>
-                <div style={{ color: "rgba(255,255,255,0.42)", fontSize: 14 }}>{item.desc}</div>
+                <div style={{ color: "white", fontWeight: 900, marginBottom: 6 }}>{item.icon} {getGuideTitle(item.id, lang as GuideLang)}</div>
+                <div style={{ color: "rgba(255,255,255,0.42)", fontSize: 14 }}>{getGuideDesc(item.id, lang as GuideLang)}</div>
               </Link>
             ))}
           </div>

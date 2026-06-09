@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-export type Lang = "IT" | "EN" | "ES" | "FR" | "PT" | "DE";
+export type Lang = "IT" | "EN";
 
 export const LANG_LABELS: Record<Lang, string> = {
-  IT: "🇮🇹 IT", EN: "🇬🇧 EN", ES: "🇪🇸 ES",
-  FR: "🇫🇷 FR", PT: "🇧🇷 PT", DE: "🇩🇪 DE",
+  IT: "🇮🇹 IT",
+  EN: "🇬🇧 EN",
 };
 
 const LS_KEY = "solmint-lang";
@@ -14,13 +14,9 @@ const LS_KEY = "solmint-lang";
 function detect(): Lang {
   if (typeof window === "undefined") return "EN";
   const stored = localStorage.getItem(LS_KEY) as Lang | null;
-  if (stored && stored in LANG_LABELS) return stored;
+  if (stored === "IT" || stored === "EN") return stored;
   const browser = navigator.language.slice(0, 2).toUpperCase();
   if (browser === "IT") return "IT";
-  if (browser === "ES") return "ES";
-  if (browser === "FR") return "FR";
-  if (browser === "PT") return "PT";
-  if (browser === "DE") return "DE";
   return "EN";
 }
 
@@ -32,7 +28,6 @@ export function useLang(): [Lang, (l: Lang) => void] {
   function change(l: Lang) {
     setLang(l);
     localStorage.setItem(LS_KEY, l);
-    // Sync SiteNavbar (other components read localStorage)
     window.dispatchEvent(new CustomEvent("solmint-lang", { detail: l }));
   }
 
