@@ -281,6 +281,8 @@ export function LiveBuys({ mint, primary, accent }: { mint: string; primary: str
   const [loading, setLoading] = useState(true);
   const seenRef = useRef(new Set<string>());
   const avgSolRef = useRef(0.1);
+  const dripCountRef = useRef(0);      // ever-increasing counter → guaranteed unique keys
+  const dripActiveRef = useRef(false); // StrictMode guard: only one drip interval
 
   // ── Fetch real sigs every 25s ────────────────────────────────────────────────
   useEffect(() => {
@@ -332,17 +334,26 @@ export function LiveBuys({ mint, primary, accent }: { mint: string; primary: str
 
   // ── Drip queue → displayed every 1.4s (streaming effect) ────────────────────
   useEffect(() => {
+    // StrictMode runs effects twice in dev; guard so only one interval exists
+    if (dripActiveRef.current) return;
+    dripActiveRef.current = true;
+
     const id = setInterval(() => {
       setQueue(prev => {
         if (prev.length === 0) return prev;
         const [next, ...rest] = prev;
-        // Add unique suffix to prevent key collisions across multiple drips
-        const entry = { ...next, id: `${next.id}-${Date.now()}`, isNew: true };
+        // Use ever-increasing counter for key → 100% unique, no Date.now() collisions
+        const uid = `drip-${++dripCountRef.current}`;
+        const entry: Buy = { ...next, id: uid, isNew: true } as any;
         setDisplayed(d => [entry, ...d].slice(0, 6));
         return rest;
       });
     }, 1400);
-    return () => clearInterval(id);
+
+    return () => {
+      clearInterval(id);
+      dripActiveRef.current = false;
+    };
   }, []);
 
   if (loading) {

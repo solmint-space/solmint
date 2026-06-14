@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
 
 export async function GET(req: NextRequest) {
@@ -14,13 +16,13 @@ export async function GET(req: NextRequest) {
         jsonrpc: "2.0",
         id: 1,
         method: "getSignaturesForAddress",
-        params: [mint, { limit: 8, commitment: "confirmed" }],
+        params: [mint, { limit: 12, commitment: "confirmed" }],
       }),
-      next: { revalidate: 15 },
+      cache: "no-store",
     });
     const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
   } catch {
-    return NextResponse.json({ result: [] });
+    return NextResponse.json({ result: [] }, { headers: { "Cache-Control": "no-store" } });
   }
 }
