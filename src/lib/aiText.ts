@@ -35,61 +35,50 @@ export async function generateSiteAI(input: SiteAIInput) {
     ? `\n\n🔴 LIVE DEXSCREENER DATA (use these EXACT real numbers in the website):\n- Price: ${input.dexData!.price || "TBA"}\n- 24h Change: ${input.dexData!.priceChange24h != null ? input.dexData!.priceChange24h + "%" : "N/A"}\n- 24h Volume: ${input.dexData!.volume24h || "N/A"}\n- Market Cap / FDV: ${input.dexData!.marketCap || "N/A"}\n- Liquidity: ${input.dexData!.liquidity || "N/A"}\n- Twitter: ${input.dexData!.twitter || "N/A"}\n- Telegram: ${input.dexData!.telegram || "N/A"}\n- Website: ${input.dexData!.website || "N/A"}`
     : "\n\n⚠️ No DexScreener data available. Create engaging placeholder stats.";
 
-  const prompt = `You are the world's best viral memecoin website copywriter. Create a complete, hype-driven website JSON for this Solana token. Make it sound REAL, EXCITING and MEME-NATIVE. Use the real DexScreener data where provided.
+  const prompt = `You are the world's best viral memecoin website copywriter. Generate a UNIQUE, CREATIVE website for this specific Solana token. Every field must be tailored to THIS token — no generic text.
 
 Token Name: ${input.tokenName}
 Symbol: $${input.symbol}
 Description: ${input.description}${dexContext}
 
-IMPORTANT RULES:
-- Use the REAL price/volume/marketcap numbers from DexScreener in liveStats
-- Make the hero copy sound like the token is already mooning
-- The about text should feel like cult/community lore
-- Roadmap phases should be creative and meme-relevant
-- howToBuy steps should mention Jupiter swap and Phantom wallet
-- Make tokenomics realistic for a Solana memecoin
+CRITICAL RULES:
+- HERO TITLE: titleLine1 must be the token name or a short punchy version. titleLine2 must be a hype phrase SPECIFIC to this token's theme (NOT generic "TO THE MOON" or "GOES INFINITE" unless thematically perfect).
+- ABOUT: Write real lore/story for THIS specific token. Reference the description, make it feel like a cult.
+- ROADMAP: 4 phases with CREATIVE titles and texts specific to this token's meme/theme. NOT generic "Launch / Meme War / Listings / Domination".
+- TOKENOMICS: Choose percentages that add up to 100%. Be creative with labels (e.g. "Dev Fund", "Staking", "Burn", etc). Vary the percentages.
+- SECURITY: Always include Mint Authority (Revoked), Tax (0%), Supply (1B), LP (Locked).
+- IMAGE PROMPTS: Write vivid, detailed AI art prompts specific to this token's theme and mascot.
+- COLOR PALETTE: Choose colors that fit the token's vibe (not always green/purple).
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
-  "vibe": "one word vibe like: cyber | meme | degen | cosmic | cute | retro | premium",
+  "vibe": "one of: cyber | meme | degen | cosmic | cute | retro | premium",
   "palette": {
-    "primary": "#hex color for this token vibe",
-    "secondary": "#hex secondary color",
-    "accent": "#hex accent color",
-    "background": "CSS gradient string for dark background"
+    "primary": "#hexcolor matching the token vibe",
+    "secondary": "#hexcolor complementary",
+    "accent": "#hexcolor for highlights",
+    "background": "CSS radial/linear gradient string, dark"
   },
   "hero": {
-    "badge": "short live badge text e.g. LIVE ON SOLANA",
-    "titleLine1": "first line of big hero headline (token name or short phrase)",
-    "titleLine2": "second line (impactful phrase like PUMP INCOMING or GOES INFINITE)",
-    "subtitle": "1-2 sentence hype description with energy",
-    "slogan": "ultra short slogan 3-5 words"
+    "badge": "short badge text like LIVE ON SOLANA or PUMP ON SOLANA",
+    "titleLine1": "${input.tokenName}",
+    "titleLine2": "UNIQUE HYPE PHRASE FOR THIS TOKEN",
+    "subtitle": "2 sentences of hype specific to this token's theme",
+    "slogan": "3-5 word slogan unique to this token"
   },
   "about": {
-    "title": "lore/story section title",
-    "text": "2-3 sentence story about this token, its vibe and why people should ape in"
+    "title": "Creative lore section title for ${input.tokenName}",
+    "text": "2-3 sentences of real lore/story specific to ${input.tokenName}, its origin and why the community is rallying around it"
   },
   "community": {
-    "title": "community section call to action headline",
-    "text": "2 sentences about the community energy"
+    "title": "UNIQUE COMMUNITY CTA FOR $${input.symbol}",
+    "text": "2 sentences about the ${input.tokenName} community energy and why holders are here"
   },
-  "liveStats": [
-    { "label": "Price", "value": "${input.dexData?.price || "TBA"}", "change": "${input.dexData?.priceChange24h != null ? (input.dexData.priceChange24h > 0 ? "▲ " : "▼ ") + Math.abs(input.dexData.priceChange24h) + "% 24h" : "Launching soon"}" },
-    { "label": "Market Cap", "value": "${input.dexData?.marketCap || "TBA"}", "change": "FDV on Dex" },
-    { "label": "24H Volume", "value": "${input.dexData?.volume24h || "TBA"}", "change": "${input.dexData?.volume24h ? "Bullish 🔥" : "Coming soon"}" },
-    { "label": "Liquidity", "value": "${input.dexData?.liquidity || "TBA"}", "change": "LP secured" }
-  ],
-  "liveBuys": [
-    { "name": "random crypto username", "amount": "X.XX SOL" },
-    { "name": "random crypto username", "amount": "X.XX SOL" },
-    { "name": "random crypto username", "amount": "X.XX SOL" },
-    { "name": "random crypto username", "amount": "X.XX SOL" }
-  ],
   "tokenomics": [
-    { "label": "Liquidity", "value": "60%" },
-    { "label": "Community", "value": "20%" },
-    { "label": "Marketing", "value": "10%" },
-    { "label": "Airdrops", "value": "10%" }
+    { "label": "CHOOSE A CREATIVE LABEL", "value": "XX%" },
+    { "label": "CHOOSE A CREATIVE LABEL", "value": "XX%" },
+    { "label": "CHOOSE A CREATIVE LABEL", "value": "XX%" },
+    { "label": "CHOOSE A CREATIVE LABEL", "value": "XX%" }
   ],
   "security": [
     { "label": "Mint Authority", "value": "Revoked" },
@@ -98,20 +87,20 @@ Return ONLY valid JSON (no markdown, no explanation):
     { "label": "LP", "value": "Locked" }
   ],
   "roadmap": [
-    { "phase": "Phase 01", "title": "Launch", "text": "Launch and first community forms." },
-    { "phase": "Phase 02", "title": "Meme War", "text": "Raids, memes, viral content." },
-    { "phase": "Phase 03", "title": "Listings", "text": "DEX visibility and growth." },
-    { "phase": "Phase 04", "title": "Domination", "text": "The meme takes over Solana." }
+    { "phase": "Phase 01", "title": "CREATIVE PHASE TITLE FOR ${input.tokenName}", "text": "2 sentences describing this phase specific to the token theme" },
+    { "phase": "Phase 02", "title": "CREATIVE PHASE TITLE", "text": "2 sentences specific to this token" },
+    { "phase": "Phase 03", "title": "CREATIVE PHASE TITLE", "text": "2 sentences specific to this token" },
+    { "phase": "Phase 04", "title": "CREATIVE PHASE TITLE", "text": "2 sentences describing the ultimate goal" }
   ],
   "howToBuy": [
-    "Get SOL on any exchange",
-    "Install Phantom or Backpack",
-    "Swap SOL for $${input.symbol} on Jupiter",
-    "Hold and join the community"
+    "Get SOL from Coinbase, Binance or Kraken",
+    "Download Phantom or Backpack wallet",
+    "Go to Jupiter.ag and swap SOL for $${input.symbol}",
+    "Welcome to the ${input.tokenName} army — hold and shill"
   ],
   "imagePrompts": {
-    "hero": "cinematic digital art: ${input.tokenName} memecoin, vibrant neon, solana blockchain energy",
-    "community": "epic community art: ${input.tokenName} token holders, crypto bulls, neon glowing"
+    "hero": "Ultra-detailed cinematic digital art: ${input.tokenName} memecoin mascot, [DESCRIBE SPECIFIC VISUAL based on token theme], dramatic neon lighting, dark background, 4K hyper-realistic, no text, no watermark",
+    "community": "Vibrant celebration scene: crowd of ${input.tokenName} fans, [DESCRIBE SPECIFIC VISUALS], explosive energy, confetti, rocket ships, neon glow, no text, no watermark"
   }
 }`;
 

@@ -28,16 +28,39 @@ function timeSince(ts: number): string {
 }
 
 async function fetchDex(mint: string) {
-  const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`, { cache: "no-cache" });
-  if (!r.ok) return null;
-  const d = await r.json();
-  return d?.pairs?.[0] ?? null;
+  // 1) Try server proxy (Node.js TLS — not affected by Windows Schannel SSL issue)
+  try {
+    const r = await fetch(`/api/dex/live?mint=${mint}`, {
+      cache: "no-cache",
+      signal: AbortSignal.timeout(7000),
+    });
+    if (r.ok) {
+      const d = await r.json();
+      const pair = d?.pairs?.[0] ?? null;
+      if (pair) return pair;
+    }
+  } catch {}
+
+  // 2) Fallback: direct browser→DexScreener (CORS allowed by DexScreener)
+  try {
+    const r = await fetch(
+      `https://api.dexscreener.com/latest/dex/tokens/${mint}`,
+      { cache: "no-cache", signal: AbortSignal.timeout(7000) }
+    );
+    if (r.ok) {
+      const d = await r.json();
+      return d?.pairs?.[0] ?? null;
+    }
+  } catch {}
+
+  return null;
 }
 
 // ── LiveStats ─────────────────────────────────────────────────────────────────
 export function LiveStats({ mint, primary, accent }: { mint: string; primary: string; accent: string }) {
   const [pair, setPair] = useState<any>(null);
   const [flash, setFlash] = useState(false);
+  const [failCount, setFailCount] = useState(0);
 
   useEffect(() => {
     if (!mint) return;
@@ -45,41 +68,52 @@ export function LiveStats({ mint, primary, accent }: { mint: string; primary: st
     async function load() {
       const p = await fetchDex(mint);
       if (!mounted) return;
-      if (p) { setPair(p); setFlash(true); setTimeout(() => setFlash(false), 700); }
+      if (p) {
+        setPair(p); setFlash(true); setFailCount(0);
+        setTimeout(() => setFlash(false), 700);
+      } else {
+        setFailCount((n) => n + 1);
+      }
     }
     load();
-    const id = setInterval(load, 12000);
+    const id = setInterval(load, 8000);
     return () => { mounted = false; clearInterval(id); };
   }, [mint]);
 
   const pos = pair ? (pair.priceChange?.h24 ?? 0) >= 0 : true;
-  const buys  = pair?.txns?.h1?.buys   || 0;
-  const sells = pair?.txns?.h1?.sells  || 0;
+  const buys  = pair?.txns?.h1?.buys  || pair?.txns?.h6?.buys  || pair?.txns?.h24?.buys  || 0;
+  const sells = pair?.txns?.h1?.sells || pair?.txns?.h6?.sells || pair?.txns?.h24?.sells || 0;
   const pressure = buys + sells > 0 ? Math.round((buys / (buys + sells)) * 100) : null;
 
-  const items = pair
-    ? [
-        { label: "Price",      value: fmtPrice(pair.priceUsd),         sub: `${pos ? "+" : ""}${(pair.priceChange?.h24 ?? 0).toFixed(2)}% 24h`, up: pos },
-        { label: "Market Cap", value: fmtNum(pair.fdv),                 sub: "FDV",              up: true },
-        { label: "24H Volume", value: fmtNum(pair.volume?.h24),         sub: `${buys} buys / 1h`, up: true },
-        { label: "Liquidity",  value: fmtNum(pair.liquidity?.usd),      sub: "LP",               up: true },
-      ]
-    : [
-        { label: "Price",      value: null, sub: "", up: true },
-        { label: "Market Cap", value: null, sub: "", up: true },
-        { label: "24H Volume", value: null, sub: "", up: true },
-        { label: "Liquidity",  value: null, sub: "", up: true },
-      ];
+  const items = [
+    { label: "Price",      value: fmtPrice(pair?.priceUsd),     sub: pair ? `${pos ? "+" : ""}${(pair.priceChange?.h24 ?? 0).toFixed(2)}% 24h` : "", up: pos },
+    { label: "Market Cap", value: fmtNum(pair?.fdv),            sub: "FDV",                                                                           up: true },
+    { label: "24H Volume", value: fmtNum(pair?.volume?.h24),    sub: pair ? `${buys} buys / 1h` : "",                                                 up: true },
+    { label: "Liquidity",  value: fmtNum(pair?.liquidity?.usd), sub: "LP",                                                                            up: true },
+  ];
+
+  // After 5 failed polls (~60s), token genuinely not on DEX yet
+  if (!pair && failCount >= 5) {
+    return (
+      <div style={{
+        gridColumn: "1 / -1",
+        background: "rgba(8,8,18,.62)", border: "1px solid rgba(255,255,255,.14)",
+        backdropFilter: "blur(22px)", borderRadius: 28, padding: "18px 24px",
+        color: "rgba(255,255,255,.4)", fontWeight: 900, fontSize: 14,
+        display: "flex", alignItems: "center", gap: 10,
+      }}>
+        <span style={{ fontSize: 20 }}>📊</span>
+        Token not indexed on DexScreener yet — stats update automatically once it's live.
+      </div>
+    );
+  }
 
   return (
     <>
       <style>{`
         @keyframes statIn { from { opacity:0; transform:scale(0.88) translateY(6px); } to { opacity:1; transform:none; } }
         @keyframes statFlash { 0%,100%{background:rgba(8,8,18,.62)} 40%{background:rgba(20,241,149,.10)} }
-        @keyframes shimmer {
-          0%   { background-position: -400px 0; }
-          100% { background-position:  400px 0; }
-        }
+        @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
       `}</style>
       {items.map((item, i) => (
         <div
@@ -91,7 +125,7 @@ export function LiveStats({ mint, primary, accent }: { mint: string; primary: st
             borderRadius: 28,
             padding: 20,
             transition: "border-color .4s",
-            animation: item.value ? `statIn .5s ${i * 0.07}s both, ${flash ? "statFlash .7s" : "none"}` : undefined,
+            animation: item.value ? `statIn .5s ${i * 0.07}s both${flash ? `, statFlash .7s` : ""}` : undefined,
           }}
         >
           <div style={{ fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.42)" }}>
@@ -114,7 +148,6 @@ export function LiveStats({ mint, primary, accent }: { mint: string; primary: st
             </>
           )}
 
-          {/* Pressure bar on price card */}
           {i === 0 && pressure !== null && (
             <div style={{ marginTop: 10, height: 4, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
               <div style={{ height: "100%", borderRadius: 99, width: `${pressure}%`, background: `linear-gradient(90deg,${primary},${accent})`, transition: "width 1s ease" }} />
@@ -127,6 +160,13 @@ export function LiveStats({ mint, primary, accent }: { mint: string; primary: st
 }
 
 // ── BuyPressure (client widget) ────────────────────────────────────────────────
+function calcPressure(p: any): number | null {
+  if (!p) return null;
+  const buys  = p.txns?.h1?.buys  || p.txns?.h6?.buys  || p.txns?.h24?.buys  || 0;
+  const sells = p.txns?.h1?.sells || p.txns?.h6?.sells || p.txns?.h24?.sells || 0;
+  return buys + sells > 0 ? Math.round((buys / (buys + sells)) * 100) : null;
+}
+
 export function BuyPressure({ mint, primary, accent }: { mint: string; primary: string; accent: string }) {
   const [pressure, setPressure] = useState<number | null>(null);
 
@@ -136,23 +176,22 @@ export function BuyPressure({ mint, primary, accent }: { mint: string; primary: 
     async function load() {
       const p = await fetchDex(mint);
       if (!mounted || !p) return;
-      const buys  = p.txns?.h1?.buys  || 0;
-      const sells = p.txns?.h1?.sells || 0;
-      if (buys + sells > 0) setPressure(Math.round((buys / (buys + sells)) * 100));
+      const val = calcPressure(p);
+      if (val !== null) setPressure(val);
     }
     load();
-    const id = setInterval(load, 15000);
+    const id = setInterval(load, 10000);
     return () => { mounted = false; clearInterval(id); };
   }, [mint]);
 
   const val = pressure ?? 50;
-  const color = val >= 60 ? primary : val >= 40 ? "#FFD43B" : "#ff4e4e";
+  const color = pressure !== null ? (val >= 60 ? primary : val >= 40 ? "#FFD43B" : "#ff4e4e") : "rgba(255,255,255,.3)";
 
   return (
     <>
       <div className="text-xs font-black uppercase text-white/45">Buy Pressure</div>
       <div className="text-4xl font-black" style={{ color, transition: "color .5s" }}>
-        {pressure !== null ? `${val}%` : "···"}
+        {pressure !== null ? `${val}%` : "—"}
       </div>
       <div style={{ height: 6, borderRadius: 99, background: "rgba(255,255,255,.1)", marginTop: 10, overflow: "hidden" }}>
         <div style={{
@@ -237,74 +276,72 @@ function BuyRow({ buy, primary, isNew }: { buy: Buy; primary: string; isNew: boo
 }
 
 export function LiveBuys({ mint, primary, accent }: { mint: string; primary: string; accent: string }) {
-  const [buys, setBuys] = useState<Buy[]>([]);
+  const [displayed, setDisplayed] = useState<Buy[]>([]);
+  const [queue, setQueue] = useState<Buy[]>([]);
   const [loading, setLoading] = useState(true);
   const seenRef = useRef(new Set<string>());
-  const RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
+  const avgSolRef = useRef(0.1);
 
+  // ── Fetch real sigs every 25s ────────────────────────────────────────────────
   useEffect(() => {
     if (!mint) return;
     let mounted = true;
 
     async function load() {
       try {
-        // Fetch pair data and signatures in parallel
-        const [pairData, sigData] = await Promise.allSettled([
-          fetchDex(mint),
-          fetch(`/api/dex/sigs?mint=${mint}`, { cache: "no-cache" }).then(r => r.json()),
-        ]);
-
+        const pair = await fetchDex(mint);
         if (!mounted) return;
 
-        const pair = pairData.status === "fulfilled" ? pairData.value : null;
-        const sigs: any[] = sigData.status === "fulfilled" ? (sigData.value?.result || []) : [];
+        const sigTarget = pair?.pairAddress || mint;
+        const sigData = await fetch(`/api/dex/sigs?mint=${sigTarget}`, { cache: "no-cache" })
+          .then(r => r.json()).catch(() => ({ result: [] }));
+        if (!mounted) return;
 
-        const avgVol = pair?.volume?.h1 && pair?.txns?.h1?.buys
-          ? pair.volume.h1 / pair.txns.h1.buys
-          : pair?.volume?.h24 && pair?.txns?.h24?.buys
-          ? pair.volume.h24 / pair.txns.h24.buys
-          : 50;
-        const avgSol = Math.max(avgVol / 155, 0.05);
+        const sigs: any[] = sigData?.result || [];
+
+        const vol = pair?.volume?.h1 || pair?.volume?.h24 || 0;
+        const txns = pair?.txns?.h1?.buys || pair?.txns?.h24?.buys || 1;
+        avgSolRef.current = Math.max((vol / txns) / 155, 0.05);
 
         const now = Math.floor(Date.now() / 1000);
+        const fresh: Buy[] = sigs
+          .slice(0, 12)
+          .map((s: any, i: number) => ({
+            id: s.signature || `sig-${i}`,
+            name: NAMES[(s.signature ? s.signature.charCodeAt(0) + s.signature.charCodeAt(2) : i * 11) % NAMES.length],
+            wallet: s.signature ? `${s.signature.slice(0, 6)}...${s.signature.slice(-4)}` : "anon",
+            amount: `~${(avgSolRef.current * (0.3 + (i % 5) * 0.5)).toFixed(2)} SOL`,
+            time: s.blockTime ?? (now - i * 15),
+            isBuy: s.err === null ? i % 5 !== 0 : false,
+          }))
+          .filter(b => !seenRef.current.has(b.id));
 
-        let newBuys: Buy[];
-        if (sigs.length > 0) {
-          newBuys = sigs.slice(0, 8).map((s: any, i: number) => ({
-            id: s.signature || `fake-${i}`,
-            name: NAMES[(i * 7 + Math.floor(Math.random() * 5)) % NAMES.length] + Math.floor(Math.random() * 99),
-            wallet: s.signature ? `${s.signature.slice(0, 4)}...${s.signature.slice(-4)}` : "anon",
-            amount: `${(avgSol * (0.3 + Math.random() * 2.8)).toFixed(2)} SOL`,
-            time: s.blockTime ?? (now - i * 18 - Math.floor(Math.random() * 30)),
-            isBuy: i % 5 !== 0,
-          }));
-        } else {
-          newBuys = Array.from({ length: 6 }, (_, i) => ({
-            id: `gen-${Date.now()}-${i}`,
-            name: NAMES[(i * 3) % NAMES.length] + Math.floor(Math.random() * 99),
-            wallet: `${Math.random().toString(36).slice(2, 6)}...${Math.random().toString(36).slice(2, 6)}`,
-            amount: `${(avgSol * (0.4 + Math.random() * 2)).toFixed(2)} SOL`,
-            time: now - i * 22 - Math.floor(Math.random() * 15),
-            isBuy: i % 5 !== 0,
-          }));
+        fresh.forEach(b => seenRef.current.add(b.id));
+
+        if (fresh.length > 0) {
+          setQueue(prev => [...fresh, ...prev].slice(0, 20));
         }
-
-        // Mark which ones are actually new
-        newBuys = newBuys.map(b => ({ ...b, isNew: !seenRef.current.has(b.id) }));
-        newBuys.forEach(b => seenRef.current.add(b.id));
-
-        setBuys(newBuys);
-      } catch {
-        setBuys([]);
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      } catch {}
+      finally { if (mounted) setLoading(false); }
     }
 
     load();
-    const id = setInterval(load, 18000);
+    const id = setInterval(load, 25000);
     return () => { mounted = false; clearInterval(id); };
   }, [mint]);
+
+  // ── Drip queue → displayed every 1.4s (streaming effect) ────────────────────
+  useEffect(() => {
+    const id = setInterval(() => {
+      setQueue(prev => {
+        if (prev.length === 0) return prev;
+        const [next, ...rest] = prev;
+        setDisplayed(d => [{ ...next, isNew: true }, ...d].slice(0, 6));
+        return rest;
+      });
+    }, 1400);
+    return () => clearInterval(id);
+  }, []);
 
   if (loading) {
     return (
@@ -322,14 +359,22 @@ export function LiveBuys({ mint, primary, accent }: { mint: string; primary: str
     );
   }
 
-  if (buys.length === 0) {
-    return <div style={{ textAlign: "center", padding: "40px 0", color: "rgba(255,255,255,0.3)", fontWeight: 900 }}>Waiting for transactions...</div>;
+  if (!loading && displayed.length === 0 && queue.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "40px 20px" }}>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+        <div style={{ color: "rgba(255,255,255,0.45)", fontWeight: 900, fontSize: 14, lineHeight: 1.5 }}>
+          No transactions found yet.<br />
+          <span style={{ fontWeight: 400, fontSize: 12, opacity: 0.6 }}>Will update automatically.</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {buys.map((buy, i) => (
-        <BuyRow key={buy.id + i} buy={buy} primary={primary} isNew={(buy as any).isNew} />
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, overflow: "hidden" }}>
+      {displayed.map((buy, i) => (
+        <BuyRow key={buy.id} buy={buy} primary={primary} isNew={(buy as any).isNew} />
       ))}
     </div>
   );

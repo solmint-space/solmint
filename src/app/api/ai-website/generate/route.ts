@@ -3,6 +3,8 @@ import { supabase } from "@/lib/supabase";
 import { generateSiteAI } from "@/lib/aiText";
 import { generateSiteImages } from "@/lib/aiImages";
 
+export const maxDuration = 120;
+
 function slugify(text: string) {
   return text
     .toLowerCase()
@@ -55,6 +57,7 @@ export async function POST(req: Request) {
     const mint = body.mint || "";
     let description = body.description || "A Solana memecoin.";
     const logoUrl = body.logoUrl || "";
+    const extraImages: string[] = body.extraImages || []; // user-uploaded non-logo images
     const inputTheme = body.theme || {};
 
     let dexData: Awaited<ReturnType<typeof fetchDexData>> = null;
@@ -81,14 +84,28 @@ export async function POST(req: Request) {
       dexData: dexData ?? undefined,
     });
 
-    const images = await generateSiteImages({
-      tokenName,
-      symbol,
-      description,
-      vibe: aiContent?.vibe,
-      heroPrompt: aiContent?.imagePrompts?.hero,
-      communityPrompt: aiContent?.imagePrompts?.community,
-    });
+    // Use user-uploaded extra images as hero/community overrides; only call HF for missing slots
+    const userHero = extraImages[0] || "";
+    const userCommunity = extraImages[1] || "";
+
+    let images: { hero: string; community: string };
+    if (userHero && userCommunity) {
+      // User provided both — skip HF entirely (faster generation)
+      images = { hero: userHero, community: userCommunity };
+    } else {
+      const generated = await generateSiteImages({
+        tokenName,
+        symbol,
+        description,
+        vibe: aiContent?.vibe,
+        heroPrompt: aiContent?.imagePrompts?.hero,
+        communityPrompt: aiContent?.imagePrompts?.community,
+      });
+      images = {
+        hero: userHero || generated.hero,
+        community: userCommunity || generated.community,
+      };
+    }
 
     const finalLogoUrl = logoUrl || dexData?.imageUrl || "";
 

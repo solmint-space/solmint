@@ -101,7 +101,8 @@ export default function AIWebsitePage() {
   );
 
   const [vibe, setVibe] = useState<Vibe>("auto");
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]); // base64 or URL
+  const [logoIndex, setLogoIndex] = useState<number>(0); // which image is the logo
   const [isGenerating, setIsGenerating] = useState(false);
   const [isFetchingDex, setIsFetchingDex] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState("");
@@ -131,7 +132,7 @@ export default function AIWebsitePage() {
         if (pair.baseToken?.name) {
           setDescription(`${pair.baseToken.name} ($${pair.baseToken.symbol}) is a live Solana token. Price: $${parseFloat(pair.priceUsd || "0").toFixed(8)} · Market Cap: ${pair.fdv ? "$" + (pair.fdv / 1_000_000).toFixed(2) + "M" : "N/A"} · 24h Volume: ${pair.volume?.h24 ? "$" + (pair.volume.h24 / 1_000).toFixed(1) + "K" : "N/A"}.`);
         }
-        if (pair.info?.imageUrl) setLogoPreview(pair.info.imageUrl);
+        if (pair.info?.imageUrl) { setImages([pair.info.imageUrl]); setLogoIndex(0); }
       }
     } catch {}
     finally {
@@ -147,7 +148,7 @@ export default function AIWebsitePage() {
       const res = await fetch("/api/ai-website/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tokenName, symbol, mint, description, logoUrl: logoPreview, theme }),
+        body: JSON.stringify({ tokenName, symbol, mint, description, logoUrl: images[logoIndex] ?? "", extraImages: images.filter((_, i) => i !== logoIndex), theme }),
       });
 
       const data = await res.json();
@@ -160,12 +161,26 @@ export default function AIWebsitePage() {
     }
   }
 
-  function handleLogo(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setLogoPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+  function handleImages(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    files.slice(0, 5 - images.length).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setImages((prev) => {
+          const next = [...prev, ev.target?.result as string];
+          return next;
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+    // reset input so same file can be re-added after removal
+    e.target.value = "";
+  }
+
+  function removeImage(idx: number) {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+    setLogoIndex((prev) => (prev >= idx && prev > 0 ? prev - 1 : prev));
   }
 
   return (
@@ -254,20 +269,48 @@ export default function AIWebsitePage() {
 
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} placeholder={t.descPlaceholder} className="w-full rounded-2xl px-4 py-4 bg-white/5 border border-white/10 text-white focus:outline-none resize-none" />
 
-              <label className="rounded-[28px] p-4 flex items-center gap-4 cursor-pointer" style={{ background: "rgba(255,255,255,.04)", border: "1px dashed rgba(255,255,255,.18)" }}>
-                <div style={{ width: 64, height: 64, borderRadius: 20, overflow: "hidden", display: "grid", placeItems: "center", background: `linear-gradient(135deg, ${theme.accent}, ${theme.second})`, flexShrink: 0 }}>
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <span style={{ fontSize: 28 }}>🖼️</span>
+              {/* Multi-image upload */}
+              <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 28, padding: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.4)", marginBottom: 12, letterSpacing: "0.08em" }}>
+                  IMAGES <span style={{ color: "rgba(255,255,255,.25)", fontWeight: 600 }}>(up to 5) — click ★ to set as logo</span>
+                </div>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {images.map((src, idx) => (
+                    <div key={idx} style={{ position: "relative", width: 80, height: 80 }}>
+                      <img
+                        src={src}
+                        alt=""
+                        style={{ width: 80, height: 80, borderRadius: 16, objectFit: "cover", border: idx === logoIndex ? `2.5px solid ${theme.accent}` : "2px solid rgba(255,255,255,.12)", cursor: "pointer" }}
+                        onClick={() => setLogoIndex(idx)}
+                      />
+                      {/* Logo badge */}
+                      {idx === logoIndex && (
+                        <div style={{ position: "absolute", top: 4, left: 4, background: theme.accent, color: "#000", fontSize: 9, fontWeight: 900, padding: "2px 5px", borderRadius: 6 }}>LOGO</div>
+                      )}
+                      {/* Remove button */}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: 6, background: "rgba(0,0,0,.7)", border: "none", color: "white", fontSize: 11, cursor: "pointer", display: "grid", placeItems: "center", lineHeight: 1 }}
+                      >×</button>
+                    </div>
+                  ))}
+
+                  {images.length < 5 && (
+                    <label style={{ width: 80, height: 80, borderRadius: 16, border: "1.5px dashed rgba(255,255,255,.2)", display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
+                      <span style={{ fontSize: 24, color: "rgba(255,255,255,.3)" }}>+</span>
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={handleImages} />
+                    </label>
                   )}
                 </div>
-                <div>
-                  <div style={{ fontWeight: 900 }}>{t.uploadTitle} <span style={{ color: "rgba(255,255,255,.4)", fontWeight: 700 }}>{t.uploadOptional}</span></div>
-                  <div style={{ color: "rgba(255,255,255,.4)", fontSize: 13, marginTop: 4 }}>{t.uploadDesc}</div>
-                </div>
-                <input type="file" accept="image/*" className="hidden" onChange={handleLogo} />
-              </label>
+
+                {images.length === 0 && (
+                  <div style={{ color: "rgba(255,255,255,.3)", fontSize: 13, marginTop: 8 }}>
+                    {t.uploadDesc}
+                  </div>
+                )}
+              </div>
 
               {/* Vibe selector */}
               <div>
@@ -341,7 +384,7 @@ export default function AIWebsitePage() {
               <div className="rounded-[28px] p-6 mb-4" style={{ background: "rgba(0,0,0,.38)", border: "1px solid rgba(255,255,255,.1)", backdropFilter: "blur(22px)" }}>
                 <div className="flex items-center gap-4 mb-8">
                   <div style={{ width: 68, height: 68, borderRadius: 24, overflow: "hidden", display: "grid", placeItems: "center", background: `linear-gradient(135deg, ${theme.accent}, ${theme.second})`, flexShrink: 0 }}>
-                    {logoPreview ? <img src={logoPreview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 32 }}>{theme.emoji}</span>}
+                    {images[logoIndex] ? <img src={images[logoIndex]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 32 }}>{theme.emoji}</span>}
                   </div>
                   <div>
                     <div style={{ fontSize: 26, fontWeight: 950, lineHeight: 1 }}>{tokenName}</div>

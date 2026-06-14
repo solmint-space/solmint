@@ -7,16 +7,16 @@ function safeArray(value: any, fallback: any[]) {
   return Array.isArray(value) && value.length ? value : fallback;
 }
 
-async function getPairAddress(mint: string): Promise<string> {
+async function fetchPairData(mint: string): Promise<any> {
   try {
     const res = await fetch(
       `https://api.dexscreener.com/latest/dex/tokens/${mint}`,
-      { next: { revalidate: 60 } }
+      { next: { revalidate: 30 } }
     );
     const data = await res.json();
-    return data?.pairs?.[0]?.pairAddress || "";
+    return data?.pairs?.[0] ?? null;
   } catch {
-    return "";
+    return null;
   }
 }
 
@@ -87,10 +87,13 @@ export default async function GeneratedSitePage({ params }: PageProps) {
     "Hold and join the community",
   ]);
 
-  // Resolve pair address server-side for correct chart embed
+  // Pair address for chart embed (server-side fetch — if it fails, chart falls back to mint)
   let pairAddress = "";
   if (data.mint) {
-    pairAddress = await getPairAddress(data.mint);
+    try {
+      const pd = await fetchPairData(data.mint);
+      pairAddress = pd?.pairAddress || "";
+    } catch {}
   }
 
   // embed=1 + trades=0 + info=0 → mostra solo il grafico prezzo
@@ -134,7 +137,7 @@ export default async function GeneratedSitePage({ params }: PageProps) {
           className="absolute inset-0 opacity-60"
           style={{
             background: heroImg
-              ? `linear-gradient(180deg,rgba(3,3,6,.15),rgba(3,3,6,.88)),url(${heroImg}) center/cover`
+              ? `linear-gradient(180deg,rgba(3,3,6,.45) 0%,rgba(3,3,6,.92) 60%),url(${heroImg}) center/cover`
               : bg,
           }}
         />
@@ -187,8 +190,8 @@ export default async function GeneratedSitePage({ params }: PageProps) {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 pt-10 pb-8 min-h-[88vh] grid lg:grid-cols-[1fr_.88fr] gap-6 items-center">
-        <div className="relative">
+      <section className="relative z-10 max-w-7xl mx-auto px-5 pt-10 pb-8 min-h-[88vh] grid lg:grid-cols-[1fr_1fr] gap-8 items-center">
+        <div className="relative min-w-0">
           <div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-xs font-black uppercase tracking-widest mb-6"
             style={{ color: primary }}
@@ -197,7 +200,14 @@ export default async function GeneratedSitePage({ params }: PageProps) {
             {hero.badge || "LIVE ON SOLANA"}
           </div>
 
-          <h1 className="mega text-[64px] sm:text-[92px] lg:text-[128px] leading-[.82] tracking-[-.085em] font-black mb-7">
+          <h1
+            className="mega font-black mb-7"
+            style={{
+              fontSize: "clamp(36px, 4.8vw, 88px)",
+              lineHeight: 0.88,
+              letterSpacing: "-0.06em",
+            }}
+          >
             {hero.titleLine1 || data.token_name}
             <br />
             <span style={{ color: primary }}>{hero.titleLine2 || "GOES WILD"}</span>
@@ -238,25 +248,31 @@ export default async function GeneratedSitePage({ params }: PageProps) {
             <div className="absolute inset-x-0 top-0 h-1/2 opacity-20" style={{ background: `linear-gradient(180deg,${secondary},transparent)`, animation: "scan 7s linear infinite" }} />
 
             {heroImg && (
-              <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-screen" />
+              <img src={heroImg} alt="" className="absolute inset-0 w-full h-full object-cover" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
-            <div className="absolute inset-x-0 bottom-0 p-6">
-              <div className="glass rounded-[32px] p-5">
-                <div className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: accent }}>
-                  {hero.slogan || `$${data.symbol} COMMUNITY`}
+            <div className="absolute inset-x-0 bottom-0 p-5">
+              <div className="glass rounded-[28px] p-4 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: accent }}>
+                    {hero.slogan || `$${data.symbol}`}
+                  </div>
+                  <div className="text-xl font-black tracking-[-.04em] leading-tight">
+                    {data.token_name} · Solana
+                  </div>
                 </div>
-                <div className="text-3xl font-black tracking-[-.05em]">
-                  {data.token_name} is live on Solana.
+                <div className="flex-shrink-0 text-right">
+                  <div className="text-xs font-black uppercase text-white/45">Community</div>
+                  <div className="text-xl font-black" style={{ color: accent }}>🔥 LIVE</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Logo floating — mostra sempre (logo o gradiente con iniziale) */}
+          {/* Logo floating */}
           <div
-            className="absolute -left-8 top-12 w-40 h-40 sm:w-52 sm:h-52 rounded-[42px] ring-4 ring-white/20 shadow-2xl overflow-hidden"
+            className="absolute -left-4 top-10 w-32 h-32 lg:w-44 lg:h-44 rounded-[32px] ring-4 ring-white/20 shadow-2xl overflow-hidden"
             style={{ animation: "floatA 4.5s ease-in-out infinite", flexShrink: 0 }}
           >
             {data.logo_url ? (
@@ -268,8 +284,8 @@ export default async function GeneratedSitePage({ params }: PageProps) {
             )}
           </div>
 
-          {/* Buy Pressure — dati reali */}
-          <div className="absolute -right-5 top-20 glass rounded-[28px] p-5 w-52" style={{ animation: "floatB 5s ease-in-out infinite" }}>
+          {/* Buy Pressure */}
+          <div className="absolute right-3 top-16 glass rounded-[28px] p-5 w-48" style={{ animation: "floatB 5s ease-in-out infinite" }}>
             {data.mint ? (
               <BuyPressure mint={data.mint} primary={primary} accent={accent} />
             ) : (
@@ -280,10 +296,6 @@ export default async function GeneratedSitePage({ params }: PageProps) {
             )}
           </div>
 
-          <div className="absolute left-6 bottom-24 glass rounded-[24px] p-4 w-48">
-            <div className="text-xs text-white/45 font-black uppercase">Community Heat</div>
-            <div className="text-3xl font-black" style={{ color: accent }}>🔥 LIVE</div>
-          </div>
         </div>
       </section>
 
@@ -291,86 +303,67 @@ export default async function GeneratedSitePage({ params }: PageProps) {
       <section className="relative z-10 px-5 pb-8">
         <div className="max-w-7xl mx-auto overflow-hidden rounded-[28px] border border-white/10 bg-black/70 py-5">
           <div
-            className="flex gap-12 whitespace-nowrap text-4xl sm:text-6xl font-black tracking-[-.06em]"
-            style={{ animation: "ticker 16s linear infinite", color: primary }}
+            className="flex gap-16 whitespace-nowrap text-4xl sm:text-5xl font-black tracking-[-.06em]"
+            style={{ animation: "ticker 22s linear infinite", color: primary }}
           >
-            {[...Array(18)].map((_, i) => (
-              <span key={i}>${data.symbol} TO THE MOON ✦</span>
-            ))}
+            {["BUY", "HOLD", "MOON", "SOLANA", "DEGEN", "LFG", "WAGMI", "GEM"].flatMap((w, i) => [
+              <span key={`a${i}`}>${data.symbol} {w} ✦</span>,
+              <span key={`b${i}`}>${data.symbol} {w} ✦</span>,
+            ])}
           </div>
         </div>
       </section>
 
-      {/* ── Live Stats (real data) ───────────────────────────────── */}
-      <section className="relative z-10 max-w-7xl mx-auto px-5 pb-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {data.mint ? (
+      {/* ── Live Stats — solo se c'è il mint ─────────────────────── */}
+      {data.mint && (
+        <section className="relative z-10 max-w-7xl mx-auto px-5 pb-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
           <LiveStats mint={data.mint} primary={primary} accent={accent} />
-        ) : (
-          [
-            { label: "Price", value: "TBA", change: "Not on Dex yet" },
-            { label: "Market Cap", value: "TBA", change: "Launch soon" },
-            { label: "24H Volume", value: "TBA", change: "Coming soon" },
-            { label: "Liquidity", value: "TBA", change: "Soon" },
-          ].map((s) => (
-            <div key={s.label} className="glass rounded-[28px] p-5">
-              <div className="text-xs uppercase tracking-widest text-white/42 font-black">{s.label}</div>
-              <div className="text-3xl font-black mt-2">{s.value}</div>
-              <div className="text-sm font-black mt-1 text-white/45">{s.change}</div>
-            </div>
-          ))
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* ── Chart + Live Buys ────────────────────────────────────── */}
-      <section id="chart" className="relative z-10 max-w-7xl mx-auto px-5 pb-8 grid lg:grid-cols-[1fr_.42fr] gap-5">
-        <div className="glass rounded-[38px] p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-[-.05em]">${data.symbol} LIVE CHART</h2>
-              <p className="text-white/45 text-sm mt-1">Live DexScreener chart — pair data</p>
-            </div>
-            {data.mint && (
+      {/* ── Chart + Live Buys — solo se c'è il mint ─────────────── */}
+      {data.mint && (
+        <section id="chart" className="relative z-10 max-w-7xl mx-auto px-5 pb-8 grid lg:grid-cols-[1fr_.42fr] gap-5">
+          <div className="glass rounded-[38px] p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-3xl sm:text-4xl font-black tracking-[-.05em]">${data.symbol} LIVE CHART</h2>
+                <p className="text-white/45 text-sm mt-1">Powered by DexScreener</p>
+              </div>
               <div className="hidden sm:flex items-center gap-2 font-black text-sm" style={{ color: primary }}>
                 <span className="w-2 h-2 rounded-full" style={{ background: primary, animation: "pulse 1.2s infinite" }} />
                 LIVE
               </div>
-            )}
-          </div>
+            </div>
 
-          {chartSrc ? (
-            <iframe
-              src={chartSrc}
-              className="w-full h-[580px] rounded-[28px] bg-black border border-white/10"
-              title={`${data.token_name} chart`}
-            />
-          ) : (
-            <div className="h-[580px] rounded-[28px] glass grid place-items-center text-center px-8">
-              <div>
-                <div className="text-6xl mb-4">📊</div>
-                <div className="text-white/60 font-black text-lg">Chart will appear here once the token is live on DexScreener.</div>
+            {chartSrc ? (
+              <iframe
+                src={chartSrc}
+                className="w-full h-[580px] rounded-[28px] bg-black border border-white/10"
+                title={`${data.token_name} chart`}
+              />
+            ) : (
+              <div className="h-[580px] rounded-[28px] glass grid place-items-center text-center px-8">
+                <div>
+                  <div className="text-5xl mb-4">📊</div>
+                  <div className="text-white/60 font-black text-lg">Chart loading — pair not indexed yet.</div>
+                  <div className="text-white/35 text-sm mt-2 font-black">CA: {data.mint}</div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        <div className="glass rounded-[38px] p-5">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-2xl sm:text-3xl font-black tracking-[-.04em]">LIVE BUYS</h3>
-            {data.mint && (
-              <span className="text-xs font-black px-2 py-1 rounded-full" style={{ background: `${primary}22`, color: primary, border: `1px solid ${primary}44` }}>
-                REAL TXNS
-              </span>
             )}
           </div>
-          {data.mint ? (
-            <LiveBuys mint={data.mint} primary={primary} accent={accent} />
-          ) : (
-            <div className="text-white/35 font-black text-sm text-center py-10">
-              Add mint address to see live transactions.
+
+          <div className="glass rounded-[38px] p-5">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-2xl sm:text-3xl font-black tracking-[-.04em]">LIVE BUYS</h3>
+              <span className="text-xs font-black px-2 py-1 rounded-full" style={{ background: `${primary}22`, color: primary, border: `1px solid ${primary}44` }}>
+                LIVE
+              </span>
             </div>
-          )}
-        </div>
-      </section>
+            <LiveBuys mint={data.mint} primary={primary} accent={accent} />
+          </div>
+        </section>
+      )}
 
       {/* ── About / Lore ─────────────────────────────────────────── */}
       <section id="about" className="relative z-10 max-w-7xl mx-auto px-5 pb-8 grid lg:grid-cols-[.85fr_1fr] gap-5">
