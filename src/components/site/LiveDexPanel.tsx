@@ -336,7 +336,9 @@ export function LiveBuys({ mint, primary, accent }: { mint: string; primary: str
       setQueue(prev => {
         if (prev.length === 0) return prev;
         const [next, ...rest] = prev;
-        setDisplayed(d => [{ ...next, isNew: true }, ...d].slice(0, 6));
+        // Add unique suffix to prevent key collisions across multiple drips
+        const entry = { ...next, id: `${next.id}-${Date.now()}`, isNew: true };
+        setDisplayed(d => [entry, ...d].slice(0, 6));
         return rest;
       });
     }, 1400);
