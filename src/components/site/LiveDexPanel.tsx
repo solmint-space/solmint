@@ -374,8 +374,8 @@ export function LiveBuys({ mint, primary, accent }: { mint: string; primary: str
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, overflow: "hidden" }}>
-      {displayed.map((buy, i) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 420, overflow: "hidden" }}>
+      {displayed.slice(0, 6).map((buy) => (
         <BuyRow key={buy.id} buy={buy} primary={primary} isNew={(buy as any).isNew} />
       ))}
     </div>
