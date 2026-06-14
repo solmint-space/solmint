@@ -277,12 +277,11 @@ function BuyRow({ buy, primary, isNew }: { buy: Buy; primary: string; isNew: boo
 
 export function LiveBuys({ mint, primary, accent }: { mint: string; primary: string; accent: string }) {
   const [displayed, setDisplayed] = useState<Buy[]>([]);
-  const [queue, setQueue] = useState<Buy[]>([]);
   const [loading, setLoading] = useState(true);
-  const seenRef = useRef(new Set<string>());
-  const avgSolRef = useRef(0.1);
-  const dripCountRef = useRef(0);      // ever-increasing counter → guaranteed unique keys
-  const dripActiveRef = useRef(false); // StrictMode guard: only one drip interval
+  const seenRef    = useRef(new Set<string>());
+  const queueRef   = useRef<Buy[]>([]);   // ref, not state → no StrictMode double-call
+  const avgSolRef  = useRef(0.1);
+  const dripCount  = useRef(0);
 
   // ── Fetch real sigs every 25s ────────────────────────────────────────────────
   useEffect(() => {
@@ -301,7 +300,7 @@ export function LiveBuys({ mint, primary, accent }: { mint: string; primary: str
 
         const sigs: any[] = sigData?.result || [];
 
-        const vol = pair?.volume?.h1 || pair?.volume?.h24 || 0;
+        const vol  = pair?.volume?.h1  || pair?.volume?.h24  || 0;
         const txns = pair?.txns?.h1?.buys || pair?.txns?.h24?.buys || 1;
         avgSolRef.current = Math.max((vol / txns) / 155, 0.05);
 
@@ -321,7 +320,8 @@ export function LiveBuys({ mint, primary, accent }: { mint: string; primary: str
         fresh.forEach(b => seenRef.current.add(b.id));
 
         if (fresh.length > 0) {
-          setQueue(prev => [...fresh, ...prev].slice(0, 20));
+          // Push new items to front of ref queue (no state → no StrictMode double-invoke)
+          queueRef.current = [...fresh, ...queueRef.current].slice(0, 20);
         }
       } catch {}
       finally { if (mounted) setLoading(false); }
@@ -332,28 +332,17 @@ export function LiveBuys({ mint, primary, accent }: { mint: string; primary: str
     return () => { mounted = false; clearInterval(id); };
   }, [mint]);
 
-  // ── Drip queue → displayed every 1.4s (streaming effect) ────────────────────
+  // ── Drip queue ref → displayed state every 1.4s ──────────────────────────────
   useEffect(() => {
-    // StrictMode runs effects twice in dev; guard so only one interval exists
-    if (dripActiveRef.current) return;
-    dripActiveRef.current = true;
-
     const id = setInterval(() => {
-      setQueue(prev => {
-        if (prev.length === 0) return prev;
-        const [next, ...rest] = prev;
-        // Use ever-increasing counter for key → 100% unique, no Date.now() collisions
-        const uid = `drip-${++dripCountRef.current}`;
-        const entry: Buy = { ...next, id: uid, isNew: true } as any;
-        setDisplayed(d => [entry, ...d].slice(0, 6));
-        return rest;
-      });
+      if (queueRef.current.length === 0) return;
+      const [next, ...rest] = queueRef.current;
+      queueRef.current = rest;
+      const entry: Buy = { ...next, id: `drip-${++dripCount.current}` } as any;
+      (entry as any).isNew = true;
+      setDisplayed(d => [entry, ...d].slice(0, 6));
     }, 1400);
-
-    return () => {
-      clearInterval(id);
-      dripActiveRef.current = false;
-    };
+    return () => clearInterval(id);
   }, []);
 
   if (loading) {
@@ -372,7 +361,7 @@ export function LiveBuys({ mint, primary, accent }: { mint: string; primary: str
     );
   }
 
-  if (!loading && displayed.length === 0 && queue.length === 0) {
+  if (!loading && displayed.length === 0 && queueRef.current.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "40px 20px" }}>
         <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
