@@ -21,8 +21,9 @@ export const SolanaWalletProvider: FC<Props> = ({ children }) => {
   const network = WalletAdapterNetwork.Mainnet;
   const endpoint =
     process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
-    `https://mainnet.helius-rpc.com/?api-key=${process.env.NEXT_PUBLIC_HELIUS_KEY || ""}` ||
-    "https://api.mainnet-beta.solana.com";
+    (process.env.NEXT_PUBLIC_HELIUS_KEY
+      ? `https://mainnet.helius-rpc.com/?api-key=${process.env.NEXT_PUBLIC_HELIUS_KEY}`
+      : "https://api.mainnet-beta.solana.com");
 
   const wallets = useMemo(
     () => [

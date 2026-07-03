@@ -20,7 +20,8 @@ export default function TokenForm({
   initialRevokeUpdate = false,
 }: TokenFormProps) {
   const { connection } = useConnection();
-  const { publicKey, signTransaction } = useWallet();
+  const wallet = useWallet();
+  const { publicKey, signTransaction } = wallet;
 
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
@@ -176,7 +177,7 @@ export default function TokenForm({
         revokeUpdate,
       };
 
-      const mint = await createToken(connection, publicKey, config, signTransaction);
+      const mint = await createToken(connection, publicKey, config, wallet as any);
       setMintAddress(mint);
       setStatus("Token creato con successo!");
     } catch (e: any) {
