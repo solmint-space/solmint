@@ -78,6 +78,29 @@ const THEMES: Record<Exclude<Vibe, "auto">, Theme> = {
   },
 };
 
+// Compress image to max 800px JPEG to stay well under the 4MB POST body limit
+async function compressImage(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 800;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round((height / width) * MAX); width = MAX; }
+        else { width = Math.round((width / height) * MAX); height = MAX; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(""); };
+    img.src = url;
+  });
+}
+
 function detectTheme(name: string, desc: string): Exclude<Vibe, "auto"> {
   const txt = `${name} ${desc}`.toLowerCase();
   if (/(ai|bot|gpt|agent|cyber|neural|robot)/.test(txt)) return "cyber";
@@ -152,29 +175,25 @@ export default function AIWebsitePage() {
       });
 
       const data = await res.json();
-      if (data?.url) setGeneratedUrl(data.url);
+      if (data?.url) {
+        setGeneratedUrl(data.url);
+      } else {
+        alert(`Generation failed: ${data?.error || res.status}`);
+      }
     } catch (err) {
       console.error(err);
-      alert("Generation failed. Please try again.");
+      alert(`Generation failed: ${err}`);
     } finally {
       setIsGenerating(false);
     }
   }
 
-  function handleImages(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImages(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    files.slice(0, 5 - images.length).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setImages((prev) => {
-          const next = [...prev, ev.target?.result as string];
-          return next;
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-    // reset input so same file can be re-added after removal
+    const toAdd = files.slice(0, 5 - images.length);
+    const compressed = await Promise.all(toAdd.map(compressImage));
+    setImages((prev) => [...prev, ...compressed].slice(0, 5));
     e.target.value = "";
   }
 

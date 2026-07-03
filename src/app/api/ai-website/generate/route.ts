@@ -148,8 +148,8 @@ export async function POST(req: Request) {
           ? `/site/${slug}`
           : `https://${slug}.solmint.space`,
     });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Generation failed." }, { status: 500 });
+  } catch (err: any) {
+    console.error("[ai-website/generate] error:", err?.message ?? err);
+    return NextResponse.json({ error: String(err?.message ?? "Generation failed.") }, { status: 500 });
   }
 }
