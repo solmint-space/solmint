@@ -1,25 +1,24 @@
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import { Connection, PublicKey, Transaction, Keypair, SystemProgram } from "@solana/web3.js";
 import {
-  createMint,
-  getOrCreateAssociatedTokenAccount,
-  mintTo,
-  setAuthority,
+  createInitializeMintInstruction,
+  createAssociatedTokenAccountInstruction,
+  createMintToInstruction,
+  createSetAuthorityInstruction,
+  getAssociatedTokenAddress,
+  MINT_SIZE,
+  TOKEN_PROGRAM_ID,
+  getMinimumBalanceForRentExemptMint,
   AuthorityType,
 } from "@solana/spl-token";
-import { Keypair } from "@solana/web3.js";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import {
   mplTokenMetadata,
-  createV1,
-  TokenStandard,
-  updateV1,
+  createMetadataAccountV3,
+  findMetadataPda,
 } from "@metaplex-foundation/mpl-token-metadata";
-import {
-  fromWeb3JsPublicKey,
-  toWeb3JsKeypair,
-} from "@metaplex-foundation/umi-web3js-adapters";
-import { generateSigner, percentAmount, some, none } from "@metaplex-foundation/umi";
+import { fromWeb3JsPublicKey } from "@metaplex-foundation/umi-web3js-adapters";
+import { none } from "@metaplex-foundation/umi";
 
 export interface TokenConfig {
   name: string;
@@ -36,39 +35,19 @@ export async function createToken(
   connection: Connection,
   payer: PublicKey,
   config: TokenConfig,
-  walletAdapter: { publicKey: PublicKey; signTransaction: (tx: Transaction) => Promise<Transaction>; signAllTransactions?: (txs: Transaction[]) => Promise<Transaction[]> }
+  walletAdapter: {
+    publicKey: PublicKey;
+    signTransaction: (tx: Transaction) => Promise<Transaction>;
+    signAllTransactions?: (txs: Transaction[]) => Promise<Transaction[]>;
+  }
 ): Promise<string> {
   const mintKeypair = Keypair.generate();
 
-  // ── Step 1: create mint account via spl-token ─────────────────────────────
-  // We use the signTransaction pattern since we don't have the private key
-  // createMint from spl-token requires the payer to be a Signer with secretKey.
-  // Instead, we build the transaction manually and sign with wallet.
-  const {
-    Keypair: Web3Keypair,
-    SystemProgram,
-    Transaction: Web3Transaction,
-    SYSVAR_RENT_PUBKEY,
-  } = await import("@solana/web3.js");
-
-  const {
-    createInitializeMintInstruction,
-    createAssociatedTokenAccountInstruction,
-    createMintToInstruction,
-    createSetAuthorityInstruction,
-    getAssociatedTokenAddress,
-    MINT_SIZE,
-    TOKEN_PROGRAM_ID,
-    getMinimumBalanceForRentExemptMint,
-  } = await import("@solana/spl-token");
-
+  // ── Tx 1: create mint + ATA + mintTo ─────────────────────────────────────
   const lamports = await getMinimumBalanceForRentExemptMint(connection);
   const ata = await getAssociatedTokenAddress(mintKeypair.publicKey, payer);
 
-  // ── Step 2: Build SPL token creation tx (createAccount + initMint + createATA + mintTo) ─
-  const tokenTx = new Web3Transaction();
-
-  tokenTx.add(
+  const tx1 = new Transaction().add(
     SystemProgram.createAccount({
       fromPubkey: payer,
       newAccountPubkey: mintKeypair.publicKey,
@@ -80,7 +59,7 @@ export async function createToken(
       mintKeypair.publicKey,
       config.decimals,
       payer,
-      config.revokeFreeze ? null : payer, // freeze authority: null if revoking
+      config.revokeFreeze ? null : payer,
       TOKEN_PROGRAM_ID
     ),
     createAssociatedTokenAccountInstruction(payer, ata, payer, mintKeypair.publicKey),
@@ -92,52 +71,49 @@ export async function createToken(
     )
   );
 
-  // If not revoking mint, we still need to revoke it after minting (handled below)
-  // If revoking freeze, it's already null in initializeMint above
+  const { blockhash: bh1, lastValidBlockHeight: lv1 } = await connection.getLatestBlockhash("confirmed");
+  tx1.recentBlockhash = bh1;
+  tx1.feePayer = payer;
+  tx1.partialSign(mintKeypair);
 
-  let { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
-  tokenTx.recentBlockhash = blockhash;
-  tokenTx.feePayer = payer;
-  tokenTx.partialSign(mintKeypair);
+  const signed1 = await walletAdapter.signTransaction(tx1);
+  const sig1 = await connection.sendRawTransaction(signed1.serialize(), { skipPreflight: false });
+  await pollConfirm(connection, sig1);
 
-  const signedTokenTx = await walletAdapter.signTransaction(tokenTx);
-  const tokenSig = await connection.sendRawTransaction(signedTokenTx.serialize(), {
-    skipPreflight: false,
-    preflightCommitment: "confirmed",
-  });
+  // ── Tx 2: create metadata via Metaplex UMI ───────────────────────────────
+  const rpcUrl = (connection as any)._rpcEndpoint
+    ?? (connection as any).rpcEndpoint
+    ?? "https://api.mainnet-beta.solana.com";
 
-  await confirmWithTimeout(connection, tokenSig, blockhash, lastValidBlockHeight, 90_000);
-
-  // ── Step 3: Create metadata via Metaplex UMI ─────────────────────────────
-  const endpoint = (connection as any)._rpcEndpoint || (connection as any).rpcEndpoint || "https://api.mainnet-beta.solana.com";
-  const umi = createUmi(endpoint)
+  const umi = createUmi(rpcUrl)
     .use(walletAdapterIdentity(walletAdapter as any))
     .use(mplTokenMetadata());
 
-  const mintUmi = fromWeb3JsPublicKey(mintKeypair.publicKey);
+  const mintPk = fromWeb3JsPublicKey(mintKeypair.publicKey);
+  const [metadataPda] = findMetadataPda(umi, { mint: mintPk });
 
-  // Build and send metadata creation tx via UMI
-  const metadataTxBuilder = createV1(umi, {
-    mint: mintUmi,
-    authority: umi.identity,
-    name: config.name,
-    symbol: config.symbol,
-    uri: config.metadataUri,
-    sellerFeeBasisPoints: percentAmount(0),
+  await createMetadataAccountV3(umi, {
+    metadata: metadataPda,
+    mint: mintPk,
+    mintAuthority: umi.identity,
+    payer: umi.identity,
+    updateAuthority: umi.identity,
+    data: {
+      name: config.name,
+      symbol: config.symbol,
+      uri: config.metadataUri,
+      sellerFeeBasisPoints: 0,
+      creators: none(),
+      collection: none(),
+      uses: none(),
+    },
     isMutable: !config.revokeUpdate,
-    tokenStandard: TokenStandard.Fungible,
-  });
+    collectionDetails: none(),
+  }).sendAndConfirm(umi, { confirm: { commitment: "confirmed" } });
 
-  await metadataTxBuilder.sendAndConfirm(umi, {
-    confirm: { commitment: "confirmed" },
-    send: { skipPreflight: false },
-  });
-
-  // ── Step 4: Revoke mint authority if requested ───────────────────────────
+  // ── Tx 3: revoke mint authority if requested ─────────────────────────────
   if (config.revokeMint) {
-    const { blockhash: bh2, lastValidBlockHeight: lvbh2 } = await connection.getLatestBlockhash("confirmed");
-    const revokeTx = new Web3Transaction();
-    revokeTx.add(
+    const tx3 = new Transaction().add(
       createSetAuthorityInstruction(
         mintKeypair.publicKey,
         payer,
@@ -145,27 +121,18 @@ export async function createToken(
         null
       )
     );
-    revokeTx.recentBlockhash = bh2;
-    revokeTx.feePayer = payer;
-    const signedRevoke = await walletAdapter.signTransaction(revokeTx);
-    const revokeSig = await connection.sendRawTransaction(signedRevoke.serialize(), {
-      skipPreflight: false,
-      preflightCommitment: "confirmed",
-    });
-    await confirmWithTimeout(connection, revokeSig, bh2, lvbh2, 60_000);
+    const { blockhash: bh3, lastValidBlockHeight: lv3 } = await connection.getLatestBlockhash("confirmed");
+    tx3.recentBlockhash = bh3;
+    tx3.feePayer = payer;
+    const signed3 = await walletAdapter.signTransaction(tx3);
+    const sig3 = await connection.sendRawTransaction(signed3.serialize(), { skipPreflight: false });
+    await pollConfirm(connection, sig3);
   }
 
   return mintKeypair.publicKey.toString();
 }
 
-// Poll instead of confirmTransaction — avoids "block height exceeded" false errors
-async function confirmWithTimeout(
-  connection: Connection,
-  sig: string,
-  _blockhash: string,
-  _lastValidBlockHeight: number,
-  timeoutMs: number
-): Promise<void> {
+async function pollConfirm(connection: Connection, sig: string, timeoutMs = 90_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const { value } = await connection.getSignatureStatuses([sig], { searchTransactionHistory: true });
@@ -174,5 +141,5 @@ async function confirmWithTimeout(
     if (s?.confirmationStatus === "confirmed" || s?.confirmationStatus === "finalized") return;
     await new Promise(r => setTimeout(r, 2000));
   }
-  throw new Error(`Timeout conferma (${timeoutMs / 1000}s). Solscan: ${sig}`);
+  throw new Error(`Timeout 90s. Firma: ${sig}`);
 }
