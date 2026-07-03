@@ -192,10 +192,21 @@ export async function createToken(
     skipPreflight: false,
     preflightCommitment: "confirmed",
   });
-  await connection.confirmTransaction(
-    { signature: sig, blockhash, lastValidBlockHeight },
-    "confirmed"
-  );
+
+  // confirmTransaction with 90s timeout — avoids hanging forever if RPC is slow
+  const confirmResult = await Promise.race([
+    connection.confirmTransaction(
+      { signature: sig, blockhash, lastValidBlockHeight },
+      "confirmed"
+    ),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout conferma transazione (90s). Controlla Solscan con la firma: " + sig)), 90_000)
+    ),
+  ]);
+
+  if ((confirmResult as any)?.value?.err) {
+    throw new Error("Transazione rifiutata dalla chain: " + JSON.stringify((confirmResult as any).value.err));
+  }
 
   return mintKeypair.publicKey.toString();
 }

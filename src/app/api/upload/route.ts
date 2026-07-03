@@ -74,9 +74,8 @@ export async function POST(req: NextRequest) {
         "https://api.pinata.cloud/pinning/pinFileToIPFS",
         pinataForm,
         {
-          headers: {
-            Authorization: `Bearer ${process.env.PINATA_JWT}`,
-          },
+          headers: { Authorization: `Bearer ${process.env.PINATA_JWT}` },
+          timeout: 20000,
         }
       );
       return NextResponse.json({
@@ -105,6 +104,7 @@ export async function POST(req: NextRequest) {
             Authorization: `Bearer ${process.env.PINATA_JWT}`,
             "Content-Type": "application/json",
           },
+          timeout: 20000,
         }
       );
       return NextResponse.json({

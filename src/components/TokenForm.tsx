@@ -141,11 +141,11 @@ export default function TokenForm({
       );
 
       // 2. Upload immagine su IPFS
-      setStatus("Upload immagine su IPFS...");
+      setStatus("Upload immagine su IPFS (max 20s)...");
       const imageUrl = await uploadImageToIPFS(image);
 
       // 3. Upload metadata su IPFS — formato standard Jupiter/Solana token list
-      setStatus("Upload metadata su IPFS...");
+      setStatus("Upload metadata su IPFS (max 20s)...");
       const extensions: Record<string, string> = {};
       if (website)  extensions.website  = website;
       if (twitter)  extensions.twitter  = twitter;
