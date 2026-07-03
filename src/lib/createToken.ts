@@ -158,23 +158,21 @@ export async function createToken(
   return mintKeypair.publicKey.toString();
 }
 
+// Poll instead of confirmTransaction — avoids "block height exceeded" false errors
 async function confirmWithTimeout(
   connection: Connection,
   sig: string,
-  blockhash: string,
-  lastValidBlockHeight: number,
+  _blockhash: string,
+  _lastValidBlockHeight: number,
   timeoutMs: number
 ): Promise<void> {
-  const result = await Promise.race([
-    connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, "confirmed"),
-    new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`Timeout conferma transazione (${timeoutMs / 1000}s). Firma: ${sig}`)),
-        timeoutMs
-      )
-    ),
-  ]);
-  if ((result as any)?.value?.err) {
-    throw new Error("Transazione rifiutata: " + JSON.stringify((result as any).value.err));
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const { value } = await connection.getSignatureStatuses([sig], { searchTransactionHistory: true });
+    const s = value?.[0];
+    if (s?.err) throw new Error("Transazione fallita: " + JSON.stringify(s.err));
+    if (s?.confirmationStatus === "confirmed" || s?.confirmationStatus === "finalized") return;
+    await new Promise(r => setTimeout(r, 2000));
   }
+  throw new Error(`Timeout conferma (${timeoutMs / 1000}s). Solscan: ${sig}`);
 }

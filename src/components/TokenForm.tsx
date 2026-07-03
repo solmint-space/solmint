@@ -8,6 +8,19 @@ import { LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram } from "@solana
 
 const TREASURY = process.env.NEXT_PUBLIC_TREASURY_WALLET!;
 
+// Poll getSignatureStatuses instead of confirmTransaction — avoids "block height exceeded" errors
+async function pollConfirm(connection: import("@solana/web3.js").Connection, sig: string, timeoutMs = 90_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const { value } = await connection.getSignatureStatuses([sig], { searchTransactionHistory: true });
+    const s = value?.[0];
+    if (s?.err) throw new Error("Transazione fallita on-chain: " + JSON.stringify(s.err));
+    if (s?.confirmationStatus === "confirmed" || s?.confirmationStatus === "finalized") return;
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  throw new Error(`Timeout conferma (90s). Controlla su Solscan: ${sig}`);
+}
+
 interface TokenFormProps {
   initialRevokeMint?: boolean;
   initialRevokeFreeze?: boolean;
@@ -136,10 +149,7 @@ export default function TokenForm({
         skipPreflight: false,
         preflightCommitment: "confirmed",
       });
-      await connection.confirmTransaction(
-        { signature: feeSig, blockhash: feeBlochhash, lastValidBlockHeight: feeLastValid },
-        "confirmed"
-      );
+      await pollConfirm(connection, feeSig, 90_000);
 
       // 2. Upload immagine su IPFS
       setStatus("Upload immagine su IPFS (max 20s)...");
