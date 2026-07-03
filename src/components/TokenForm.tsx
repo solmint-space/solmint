@@ -187,7 +187,7 @@ export default function TokenForm({
         revokeUpdate,
       };
 
-      const mint = await createToken(connection, publicKey, config, wallet as any);
+      const mint = await createToken(connection, publicKey, config, { publicKey, signTransaction: signTransaction! });
       setMintAddress(mint);
       setStatus("Token creato con successo!");
     } catch (e: any) {
